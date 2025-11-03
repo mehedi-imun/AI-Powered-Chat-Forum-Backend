@@ -2,7 +2,7 @@ import httpStatus from "http-status";
 import { Types } from "mongoose";
 import AppError from "../../errors/AppError";
 import { QUEUES } from "../../config/rabbitmq";
-import { publishToNotificationsQueue, publishToAIModerationQueue } from "../../services/queue.service";
+import { publishNotification, publishAIModeration } from "../../services/queue.service";
 import { User } from "../user/user.model";
 import { Thread } from "../thread/thread.model";
 import { ThreadService } from "../thread/thread.service";
@@ -73,12 +73,12 @@ const createPost = async (
     }).select("_id");
 
     if (mentionedUsers.length > 0) {
-      post.mentions = mentionedUsers.map((u) => u._id);
+      post.mentions = mentionedUsers.map((u) => u._id) as any;
       await post.save();
 
       // Publish notification jobs for each mention
       for (const mentionedUser of mentionedUsers) {
-        await publishToNotificationsQueue({
+        await publishNotification({
           type: "mention",
           userId: mentionedUser._id.toString(),
           postId: post._id!.toString(),
@@ -93,7 +93,7 @@ const createPost = async (
   if (parentId) {
     const parentPost = await Post.findById(parentId);
     if (parentPost && parentPost.author.toString() !== userId) {
-      await publishToNotificationsQueue({
+      await publishNotification({
         type: "reply",
         userId: parentPost.author.toString(),
         postId: post._id!.toString(),
@@ -104,7 +104,7 @@ const createPost = async (
   }
 
   // Publish to AI moderation queue
-  await publishToAIModerationQueue({
+  await publishAIModeration({
     postId: post._id!.toString(),
     content: post.content,
     authorId: userId,
@@ -137,7 +137,7 @@ const getPostsByThread = async (
       return {
         ...post.toObject(),
         replies,
-      } as IPostWithAuthor;
+      } as unknown as IPostWithAuthor;
     })
   );
 
@@ -181,7 +181,7 @@ const getPostReplies = async (
       return {
         ...reply.toObject(),
         replies: nestedReplies,
-      } as IPostWithAuthor;
+      } as unknown as IPostWithAuthor;
     })
   );
 
@@ -205,7 +205,7 @@ const getPostById = async (id: string): Promise<IPostWithAuthor> => {
   return {
     ...post.toObject(),
     replies,
-  } as IPostWithAuthor;
+  } as unknown as IPostWithAuthor;
 };
 
 // Update post
@@ -243,7 +243,7 @@ const updatePost = async (
   await post.save();
 
   // Re-run AI moderation on edited content
-  await publishToAIModerationQueue({
+  await publishAIModeration({
     postId: post._id!.toString(),
     content: post.content,
     authorId: userId,
@@ -320,7 +320,7 @@ const getPostsByUser = async (
   });
 
   return {
-    posts: posts as IPostWithAuthor[],
+    posts: posts as unknown as IPostWithAuthor[],
     total,
   };
 };
@@ -346,7 +346,7 @@ const getFlaggedPosts = async (
   });
 
   return {
-    posts: posts as IPostWithAuthor[],
+    posts: posts as unknown as IPostWithAuthor[],
     total,
   };
 };
