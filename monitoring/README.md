@@ -1,6 +1,6 @@
 # Monitoring Configuration
 
-এই ফোল্ডারে Chat Forum Application এর monitoring configuration রাখা আছে।
+Chat Forum Application এর monitoring configuration 
 
 ## Structure
 
@@ -139,12 +139,6 @@ curl http://localhost:5000/api/v1/health
 - Use environment-specific configs
 - Enable authentication and SSL
 - Set up alerting rules
-
-## Related Documentation
-
-- [GRAFANA-SETUP.md](../GRAFANA-SETUP.md) - Detailed setup guide
-- [PROBLEM-SOLVED.md](../PROBLEM-SOLVED.md) - Path normalization fix
-- [LOGGING.md](../LOGGING.md) - Pino logging configuration
 
 ## Metrics Collected
 
