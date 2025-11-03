@@ -54,7 +54,6 @@ const callOpenRouter = async (
   }
 };
 
-// AI Service Interface
 export interface IModerationResult {
   isSpam: boolean;
   isToxic: boolean;

@@ -20,7 +20,6 @@ export const connectRabbitMQ = async (): Promise<void> => {
     connection = conn;
     console.log("✅ RabbitMQ connected successfully");
 
-    // Create channel
     const ch = await conn.createChannel();
     channel = ch;
     console.log("✅ RabbitMQ channel created");

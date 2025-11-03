@@ -2,7 +2,6 @@ import pino from "pino";
 import pinoPretty from "pino-pretty";
 import env from "../config/env";
 
-// Create pretty stream for development
 const prettyStream = pinoPretty({
   colorize: true,
   translateTime: "SYS:HH:MM:ss",
@@ -62,7 +61,6 @@ if (env.NODE_ENV === "production") {
     fs.mkdirSync(logsDir, { recursive: true });
   }
 
-  // Create file streams
   const errorStream = pino.destination({
     dest: path.join(logsDir, "error.log"),
     sync: false,
@@ -73,7 +71,6 @@ if (env.NODE_ENV === "production") {
     sync: false,
   });
 
-  // Create separate loggers for files
   const errorLogger = pino({ level: "error" }, errorStream);
   const combinedLogger = pino(combinedStream);
 
@@ -130,7 +127,6 @@ export const logHttp = (message: string, meta?: any) => {
   logger.info({ emoji: "🌐", ...meta }, message);
 };
 
-// Create a child logger with context
 export const createChildLogger = (context: Record<string, any>) => {
   return logger.child(context);
 };
