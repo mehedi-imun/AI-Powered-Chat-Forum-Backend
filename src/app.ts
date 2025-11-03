@@ -15,9 +15,10 @@ import { AuthRoutes } from "./modules/auth/auth.routes";
 // import OrganizationRoutes from "./modules/organization/organization.routes";
 // import { TeamRoutes } from "./modules/team/team.routes";
 // import { TrialRoutes } from "./modules/trial/trial.routes";
-import { UserRoutes } from "./modules/user/user.routes";
+// import { UserRoutes } from "./modules/user/user.routes";
 import { ThreadRoutes } from "./modules/thread/thread.routes";
 import { PostRoutes } from "./modules/post/post.routes";
+import { UserRoutes } from "./modules/user/user.routes";
 
 const app = express();
 

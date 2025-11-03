@@ -7,8 +7,9 @@ import {
   hashResetToken,
   verifyRefreshToken,
 } from "../../utils/jwt";
-import { User } from "../user/user.model";
+// import { User } from "../user/user.model";
 import { ILoginResponse, IRefreshTokenResponse } from "./auth.interface";
+import { User } from "../user/user.model";
 
 // Login user
 const login = async (
