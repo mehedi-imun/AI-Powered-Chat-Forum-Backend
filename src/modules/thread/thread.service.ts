@@ -102,14 +102,14 @@ const getAllThreads = async (
   const cacheKey = `${CACHE_KEY_LIST}:${JSON.stringify(query)}`;
   const cached = await cacheService.getJSON(cacheKey);
 
-  if (cached) {
-    return cached;
+  if (cached && Object.keys(cached).length > 0) {
+    return cached as { threads: IThreadWithAuthor[]; total: number; page: number; limit: number };
   }
 
   const searchableFields = ["title", "description"];
   const queryBuilder = new QueryBuilder(
     Thread.find({ status: { $ne: "deleted" } }).populate("createdBy", "name email role"),
-    query
+    query as any
   )
     .search(searchableFields)
     .filter()
@@ -149,8 +149,8 @@ const getThreadById = async (id: string): Promise<IThreadWithAuthor> => {
   const cacheKey = `${CACHE_KEY_PREFIX}${id}`;
   const cached = await cacheService.getJSON(cacheKey);
 
-  if (cached) {
-    return cached;
+  if (cached && Object.keys(cached).length > 0) {
+    return cached as IThreadWithAuthor;
   }
 
   const thread = await Thread.findOne({
@@ -176,8 +176,8 @@ const getThreadBySlug = async (slug: string): Promise<IThreadWithAuthor> => {
   const cacheKey = `${CACHE_KEY_PREFIX}slug:${slug}`;
   const cached = await cacheService.getJSON(cacheKey);
 
-  if (cached) {
-    return cached;
+  if (cached && Object.keys(cached).length > 0) {
+    return cached as IThreadWithAuthor;
   }
 
   const thread = await Thread.findOne({
