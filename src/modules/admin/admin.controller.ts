@@ -175,25 +175,16 @@ const updateSystemSettings = catchAsync(async (req, res) => {
 });
 
 export const AdminController = {
-  // Dashboard
   getDashboardStats,
-
-  // User Management
   getAllUsers,
   updateUser,
   banUser,
   unbanUser,
-
-  // Content Moderation
   createReport,
   getAllReports,
   getReportById,
   takeReportAction,
-
-  // Activity Logs
   getActivityLogs,
-
-  // System Settings
   getSystemSettings,
   updateSystemSettings,
 };

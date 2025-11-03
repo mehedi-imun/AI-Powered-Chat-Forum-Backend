@@ -81,20 +81,17 @@ const postSchema = new Schema<IPost>(
   }
 );
 
-// Indexes for performance
 postSchema.index({ threadId: 1, status: 1, createdAt: 1 });
 postSchema.index({ threadId: 1, parentId: 1, status: 1 });
 postSchema.index({ author: 1, status: 1 });
 postSchema.index({ moderationStatus: 1, createdAt: -1 });
 
-// Virtual for replies
 postSchema.virtual("replies", {
   ref: "Post",
   localField: "_id",
   foreignField: "parentId",
 });
 
-// Method to extract mentions from content
 postSchema.methods.extractMentions = function (): string[] {
   const mentionRegex = /@(\w+)/g;
   const matches = this.content.match(mentionRegex);

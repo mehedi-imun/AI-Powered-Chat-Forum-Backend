@@ -13,8 +13,6 @@ import {
 
 const router = express.Router();
 
-// ==================== Dashboard ====================
-// GET /api/v1/admin/dashboard - Admin & Moderator only
 router.get(
   "/dashboard",
   authenticate,
@@ -22,8 +20,6 @@ router.get(
   AdminController.getDashboardStats
 );
 
-// ==================== User Management ====================
-// GET /api/v1/admin/users - Admin & Moderator only
 router.get(
   "/users",
   authenticate,
@@ -31,7 +27,6 @@ router.get(
   AdminController.getAllUsers
 );
 
-// PATCH /api/v1/admin/users/:userId - Admin only
 router.patch(
   "/users/:userId",
   authenticate,
@@ -40,7 +35,6 @@ router.patch(
   AdminController.updateUser
 );
 
-// POST /api/v1/admin/users/:userId/ban - Admin & Moderator only
 router.post(
   "/users/:userId/ban",
   authenticate,
@@ -49,7 +43,6 @@ router.post(
   AdminController.banUser
 );
 
-// POST /api/v1/admin/users/:userId/unban - Admin & Moderator only
 router.post(
   "/users/:userId/unban",
   authenticate,
@@ -57,8 +50,6 @@ router.post(
   AdminController.unbanUser
 );
 
-// ==================== Content Moderation ====================
-// POST /api/v1/admin/reports - Any authenticated user can report
 router.post(
   "/reports",
   authenticate,
@@ -66,7 +57,6 @@ router.post(
   AdminController.createReport
 );
 
-// GET /api/v1/admin/reports - Admin & Moderator only
 router.get(
   "/reports",
   authenticate,
@@ -74,7 +64,6 @@ router.get(
   AdminController.getAllReports
 );
 
-// GET /api/v1/admin/reports/:reportId - Admin & Moderator only
 router.get(
   "/reports/:reportId",
   authenticate,
@@ -82,7 +71,6 @@ router.get(
   AdminController.getReportById
 );
 
-// POST /api/v1/admin/reports/:reportId/action - Admin & Moderator only
 router.post(
   "/reports/:reportId/action",
   authenticate,
@@ -91,8 +79,6 @@ router.post(
   AdminController.takeReportAction
 );
 
-// ==================== Activity Logs ====================
-// GET /api/v1/admin/activity-logs - Admin only
 router.get(
   "/activity-logs",
   authenticate,
@@ -100,8 +86,6 @@ router.get(
   AdminController.getActivityLogs
 );
 
-// ==================== System Settings ====================
-// GET /api/v1/admin/settings - Admin only
 router.get(
   "/settings",
   authenticate,
@@ -109,7 +93,6 @@ router.get(
   AdminController.getSystemSettings
 );
 
-// PATCH /api/v1/admin/settings - Admin only
 router.patch(
   "/settings",
   authenticate,

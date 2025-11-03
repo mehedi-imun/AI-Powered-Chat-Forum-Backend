@@ -76,7 +76,6 @@ const deleteThread = catchAsync(async (req, res) => {
   });
 });
 
-// Search threads
 const searchThreads = catchAsync(async (req, res) => {
   const { keyword, page, limit } = req.query;
   const result = await ThreadService.searchThreads(
@@ -110,7 +109,6 @@ const getThreadsByUser = catchAsync(async (req, res) => {
   });
 });
 
-// Request thread summary
 const requestThreadSummary = catchAsync(async (req, res) => {
   const { id } = req.params;
   await ThreadService.requestThreadSummary(id);

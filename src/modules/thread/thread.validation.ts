@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Create thread validation
 export const createThreadSchema = z.object({
   body: z.object({
     title: z
@@ -25,7 +24,6 @@ export const createThreadSchema = z.object({
   }),
 });
 
-// Update thread validation
 export const updateThreadSchema = z.object({
   body: z.object({
     title: z
@@ -49,14 +47,12 @@ export const updateThreadSchema = z.object({
   }),
 });
 
-// Get thread by ID validation
 export const getThreadByIdSchema = z.object({
   params: z.object({
     id: z.string({ message: "Thread ID is required" }),
   }),
 });
 
-// Query validation for thread list
 export const queryThreadSchema = z.object({
   query: z.object({
     page: z.string().optional(),

@@ -1,6 +1,5 @@
 import { Types } from "mongoose";
 
-// Dashboard Statistics
 export interface IDashboardStats {
   totalUsers: number;
   totalThreads: number;
@@ -14,7 +13,6 @@ export interface IDashboardStats {
   bannedUsers: number;
 }
 
-// User Management
 export interface IUserFilter {
   role?: "Admin" | "Moderator" | "Member";
   isActive?: boolean;
@@ -38,7 +36,6 @@ export interface IBanUser {
   bannedBy: Types.ObjectId;
 }
 
-// Content Moderation
 export interface IReportCreate {
   reportedContentType: "thread" | "post" | "user";
   reportedContentId: Types.ObjectId;
@@ -94,7 +91,6 @@ export interface IReportAction {
   reviewedBy: string;
 }
 
-// Activity Logs
 export interface IActivityLog {
   _id: Types.ObjectId;
   adminId: Types.ObjectId;
@@ -127,7 +123,6 @@ export interface IActivityLogCreate {
   ipAddress?: string;
 }
 
-// Ban Management
 export interface IBan {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
@@ -138,7 +133,6 @@ export interface IBan {
   isActive: boolean;
 }
 
-// System Settings
 export interface ISystemSettings {
   _id: Types.ObjectId;
   maintenanceMode: boolean;

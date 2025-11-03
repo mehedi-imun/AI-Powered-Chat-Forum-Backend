@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// User Management Validation
 export const updateUserSchema = z.object({
   body: z.object({
     name: z
@@ -31,7 +30,6 @@ export const banUserSchema = z.object({
   }),
 });
 
-// Report Validation
 export const createReportSchema = z.object({
   body: z.object({
     reportedContentType: z.enum(["thread", "post", "user"]),
@@ -63,7 +61,6 @@ export const reportActionSchema = z.object({
   }),
 });
 
-// System Settings Validation
 export const updateSystemSettingsSchema = z.object({
   body: z.object({
     maintenanceMode: z.boolean().optional(),

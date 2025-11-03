@@ -54,11 +54,9 @@ const notificationSchema = new Schema<INotification>(
   }
 );
 
-// Compound index for efficient queries
 notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
 notificationSchema.index({ userId: 1, type: 1 });
 
-// Auto-delete notifications older than 90 days
 notificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 });
 
 export const Notification = model<INotification>("Notification", notificationSchema);

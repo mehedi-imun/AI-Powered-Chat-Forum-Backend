@@ -73,7 +73,6 @@ const userSchema = new Schema<IUser>(
     timestamps: true,
     toJSON: {
       transform: (_doc, ret) => {
-        // Remove sensitive fields from JSON output
         const { password, __v, ...rest } = ret;
         return rest;
       },
@@ -81,11 +80,9 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Indexes for performance
 userSchema.index({ email: 1 });
 userSchema.index({ role: 1, isActive: 1 });
 
-// Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
@@ -98,7 +95,6 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// Method to compare passwords
 userSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {

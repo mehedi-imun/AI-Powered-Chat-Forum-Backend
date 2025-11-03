@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Create post validation
 export const createPostSchema = z.object({
   body: z.object({
     threadId: z.string({ message: "Thread ID is required" }).trim(),
@@ -13,7 +12,6 @@ export const createPostSchema = z.object({
   }),
 });
 
-// Update post validation
 export const updatePostSchema = z.object({
   body: z.object({
     content: z
@@ -24,14 +22,12 @@ export const updatePostSchema = z.object({
   }),
 });
 
-// Get post by ID validation
 export const getPostByIdSchema = z.object({
   params: z.object({
     id: z.string({ message: "Post ID is required" }),
   }),
 });
 
-// Query validation for post list
 export const queryPostSchema = z.object({
   query: z.object({
     page: z.string().optional(),

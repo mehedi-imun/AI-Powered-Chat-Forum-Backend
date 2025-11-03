@@ -77,21 +77,18 @@ const threadSchema = new Schema<IThread>(
   }
 );
 
-// Indexes for performance
 threadSchema.index({ title: "text", description: "text" }); // Full-text search
 threadSchema.index({ createdBy: 1, status: 1 });
 threadSchema.index({ tags: 1, status: 1 });
 threadSchema.index({ lastActivityAt: -1 });
 threadSchema.index({ createdAt: -1 });
 
-// Virtual for posts (if needed)
 threadSchema.virtual("posts", {
   ref: "Post",
   localField: "_id",
   foreignField: "threadId",
 });
 
-// Helper method to generate slug from title
 threadSchema.statics.generateSlug = function (title: string): string {
   return title
     .toLowerCase()
@@ -99,14 +96,12 @@ threadSchema.statics.generateSlug = function (title: string): string {
     .replace(/^-+|-+$/g, "");
 };
 
-// Pre-save hook to generate slug
 threadSchema.pre("save", async function (next) {
   if (this.isNew || this.isModified("title")) {
     let slug = (this.constructor as any).generateSlug(this.title);
     let uniqueSlug = slug;
     let counter = 1;
 
-    // Ensure slug is unique
     while (await mongoose.model("Thread").findOne({ slug: uniqueSlug })) {
       uniqueSlug = `${slug}-${counter}`;
       counter++;

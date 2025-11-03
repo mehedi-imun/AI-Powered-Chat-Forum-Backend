@@ -1,9 +1,7 @@
 import { z } from "zod";
 
-// User roles enum
 export const UserRoleEnum = z.enum(["Admin", "Moderator", "Member"]);
 
-// Update user profile schema
 export const updateUserSchema = z.object({
   body: z.object({
     name: z

@@ -1,7 +1,6 @@
 import { Schema, model } from "mongoose";
 import { IReport, IActivityLog, IBan, ISystemSettings } from "./admin.interface";
 
-// Report Model
 const reportSchema = new Schema<IReport>(
   {
     reportedContentType: {
@@ -60,11 +59,9 @@ const reportSchema = new Schema<IReport>(
   }
 );
 
-// Indexes for performance
 reportSchema.index({ status: 1, createdAt: -1 });
 reportSchema.index({ reportedContentType: 1, reportedContentId: 1 });
 
-// Activity Log Model
 const activityLogSchema = new Schema<IActivityLog>(
   {
     adminId: {
@@ -106,11 +103,9 @@ const activityLogSchema = new Schema<IActivityLog>(
   }
 );
 
-// Indexes for performance
 activityLogSchema.index({ adminId: 1, createdAt: -1 });
 activityLogSchema.index({ action: 1, createdAt: -1 });
 
-// Ban Model
 const banSchema = new Schema<IBan>(
   {
     userId: {
@@ -149,11 +144,9 @@ const banSchema = new Schema<IBan>(
   }
 );
 
-// Indexes for performance
 banSchema.index({ userId: 1, isActive: 1 });
 banSchema.index({ expiresAt: 1 });
 
-// System Settings Model
 const systemSettingsSchema = new Schema<ISystemSettings>(
   {
     maintenanceMode: {
