@@ -9,7 +9,7 @@ export interface AuthRequest extends Request {
 
 export const authenticate = async (
 	req: AuthRequest,
-	res: Response,
+	_res: Response,
 	next: NextFunction,
 ) => {
 	try {
@@ -37,7 +37,7 @@ export const authenticate = async (
 
 export const authenticateOptional = async (
 	req: AuthRequest,
-	res: Response,
+	_res: Response,
 	next: NextFunction,
 ) => {
 	try {
@@ -47,12 +47,12 @@ export const authenticateOptional = async (
 		if (token) {
 			const decoded = verifyAccessToken(token);
 			const user = await User.findById(decoded.userId);
-			if (user && user.isActive) {
+			if (user?.isActive) {
 				req.user = user;
 			}
 		}
 		next();
-	} catch (error) {
+	} catch (_error) {
 		next();
 	}
 };

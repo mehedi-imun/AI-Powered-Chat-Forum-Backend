@@ -47,7 +47,7 @@ const metricsMiddleware = promBundle({
 			if (p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
 
 			return p;
-		} catch (err) {
+		} catch (_err) {
 			return (req.path || req.url || "").replace(/\/\/{2,}/g, "/");
 		}
 	},
@@ -56,7 +56,7 @@ const metricsMiddleware = promBundle({
 });
 app.use(metricsMiddleware);
 
-app.use((req: any, res: any, next) => {
+app.use((_req: any, res: any, next) => {
 	const start = Date.now();
 	const originalEnd = res.end;
 
@@ -75,7 +75,7 @@ app.use(
 		autoLogging: {
 			ignore: (req) => req.url === "/health" || req.url === "/metrics",
 		},
-		customLogLevel: (req, res, err) => {
+		customLogLevel: (_req, res, err) => {
 			if (res.statusCode >= 500 || err) return "error";
 			if (res.statusCode >= 400) return "warn";
 			return "info";
@@ -147,7 +147,7 @@ app.get("/", (_req, res) => {
 
 app.use(globalErrorHandler);
 
-app.use((req, res) => {
+app.use((_req, res) => {
 	res.status(404).json({
 		success: false,
 		message: "Route Not Found",

@@ -100,7 +100,7 @@ userSchema.methods.comparePassword = async function (
 ): Promise<boolean> {
 	try {
 		return await bcrypt.compare(candidatePassword, this.password);
-	} catch (error) {
+	} catch (_error) {
 		return false;
 	}
 };

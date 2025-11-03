@@ -8,7 +8,7 @@ import type { AuthRequest } from "./authenticate";
  */
 export const authorizeOrganizationOwner = (
 	req: AuthRequest,
-	res: Response,
+	_res: Response,
 	next: NextFunction,
 ) => {
 	if (!req.user) {

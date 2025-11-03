@@ -40,52 +40,46 @@ const createThread = async (
 	userId: string,
 ): Promise<IThread> => {
 	const { title, description, tags, initialPostContent } = data;
+	const thread = await Thread.create({
+		title,
+		description,
+		tags: tags || [],
+		createdBy: new Types.ObjectId(userId),
+		viewCount: 0,
+		postCount: 1, // Initial post counts
+		lastActivityAt: new Date(),
+		isPinned: false,
+		isLocked: false,
+		status: "active",
+	});
 
-	try {
-		const thread = await Thread.create({
-			title,
-			description,
-			tags: tags || [],
-			createdBy: new Types.ObjectId(userId),
-			viewCount: 0,
-			postCount: 1, // Initial post counts
-			lastActivityAt: new Date(),
-			isPinned: false,
-			isLocked: false,
-			status: "active",
+	await Post.create({
+		threadId: thread._id,
+		content: initialPostContent,
+		author: new Types.ObjectId(userId),
+		mentions: [],
+		status: "active",
+		moderationStatus: "approved",
+	});
+
+	// Invalidate cache
+	await invalidateThreadCache();
+
+	// Emit Socket.IO event to all clients
+	const io = getIO();
+	if (io) {
+		const populatedThread = await Thread.findById(thread._id).populate(
+			"createdBy",
+			"name email role avatar",
+		);
+
+		io.emit("thread:created", {
+			thread: populatedThread,
+			timestamp: new Date(),
 		});
-
-		await Post.create({
-			threadId: thread._id,
-			content: initialPostContent,
-			author: new Types.ObjectId(userId),
-			mentions: [],
-			status: "active",
-			moderationStatus: "approved",
-		});
-
-		// Invalidate cache
-		await invalidateThreadCache();
-
-		// Emit Socket.IO event to all clients
-		const io = getIO();
-		if (io) {
-			const populatedThread = await Thread.findById(thread._id).populate(
-				"createdBy",
-				"name email role avatar",
-			);
-
-			io.emit("thread:created", {
-				thread: populatedThread,
-				timestamp: new Date(),
-			});
-		}
-
-		return thread;
-	} catch (error) {
-		// If thread was created but post creation failed, clean up
-		throw error;
 	}
+
+	return thread;
 };
 
 const getAllThreads = async (

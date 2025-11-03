@@ -1,4 +1,4 @@
-import { createServer, type Server } from "http";
+import { createServer, type Server } from "node:http";
 import mongoose from "mongoose";
 import app from "./app";
 import env from "./config/env";

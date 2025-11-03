@@ -1,4 +1,4 @@
-import type { Server as HTTPServer } from "http";
+import type { Server as HTTPServer } from "node:http";
 import { type Socket, Server as SocketIOServer } from "socket.io";
 import { verifyAccessToken } from "../utils/jwt";
 import env from "./env";
@@ -31,7 +31,7 @@ export const initializeSocketIO = (httpServer: HTTPServer): SocketIOServer => {
 			(socket as any).userRole = decoded.role;
 
 			next();
-		} catch (error) {
+		} catch (_error) {
 			next(new Error("Authentication failed"));
 		}
 	});

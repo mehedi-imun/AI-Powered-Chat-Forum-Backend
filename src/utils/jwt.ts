@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import env from "../config/env";
 
@@ -23,7 +23,7 @@ export const generateRefreshToken = (payload: TokenPayload): string => {
 export const verifyAccessToken = (token: string): TokenPayload => {
 	try {
 		return jwt.verify(token, env.JWT_SECRET) as TokenPayload;
-	} catch (error) {
+	} catch (_error) {
 		throw new Error("Invalid or expired access token");
 	}
 };
@@ -31,7 +31,7 @@ export const verifyAccessToken = (token: string): TokenPayload => {
 export const verifyRefreshToken = (token: string): TokenPayload => {
 	try {
 		return jwt.verify(token, env.JWT_REFRESH_SECRET) as TokenPayload;
-	} catch (error) {
+	} catch (_error) {
 		throw new Error("Invalid or expired refresh token");
 	}
 };

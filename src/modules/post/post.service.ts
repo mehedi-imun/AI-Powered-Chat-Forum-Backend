@@ -1,6 +1,5 @@
 import httpStatus from "http-status";
 import { Types } from "mongoose";
-import { QUEUES } from "../../config/rabbitmq";
 import { getIO } from "../../config/socket";
 import AppError from "../../errors/AppError";
 import {
@@ -11,12 +10,11 @@ import { NotificationService } from "../notification/notification.service";
 import { Thread } from "../thread/thread.model";
 import { ThreadService } from "../thread/thread.service";
 import { User } from "../user/user.model";
-import {
-	type IPost,
-	type IPostCreate,
-	IPostQuery,
-	type IPostUpdate,
-	type IPostWithAuthor,
+import type {
+	IPost,
+	IPostCreate,
+	IPostUpdate,
+	IPostWithAuthor,
 } from "./post.interface";
 import { Post } from "./post.model";
 
@@ -85,7 +83,7 @@ const createPost = async (
 					await NotificationService.createMentionNotification(
 						mentionedUser._id.toString(),
 						userId,
-						post._id!.toString(),
+						post._id?.toString(),
 						threadId,
 						thread.title,
 					);
@@ -95,7 +93,7 @@ const createPost = async (
 				await publishNotification({
 					type: "mention",
 					userId: mentionedUser._id.toString(),
-					postId: post._id!.toString(),
+					postId: post._id?.toString(),
 					threadId,
 					mentionedBy: userId,
 				});
@@ -110,7 +108,7 @@ const createPost = async (
 			await NotificationService.createReplyNotification(
 				parentPost.author.toString(),
 				userId,
-				post._id!.toString(),
+				post._id?.toString(),
 				threadId,
 				thread.title,
 			);
@@ -119,7 +117,7 @@ const createPost = async (
 			await publishNotification({
 				type: "reply",
 				userId: parentPost.author.toString(),
-				postId: post._id!.toString(),
+				postId: post._id?.toString(),
 				threadId,
 				repliedBy: userId,
 			});
@@ -128,7 +126,7 @@ const createPost = async (
 
 	// Publish to AI moderation queue
 	await publishAIModeration({
-		postId: post._id!.toString(),
+		postId: post._id?.toString(),
 		content: post.content,
 		authorId: userId,
 	});
@@ -170,7 +168,7 @@ const getPostsByThread = async (
 	// For each post, get its replies (up to 2 levels deep for performance)
 	const postsWithReplies = await Promise.all(
 		posts.map(async (post) => {
-			const replies = await getPostReplies(post._id!.toString());
+			const replies = await getPostReplies(post._id?.toString());
 			return {
 				...post.toObject(),
 				replies,
@@ -210,7 +208,7 @@ const getPostReplies = async (
 	const repliesWithNested = await Promise.all(
 		replies.map(async (reply) => {
 			const nestedReplies = await getPostReplies(
-				reply._id!.toString(),
+				reply._id?.toString(),
 				depth + 1,
 				maxDepth,
 			);
@@ -277,7 +275,7 @@ const updatePost = async (
 
 	// Re-run AI moderation on edited content
 	await publishAIModeration({
-		postId: post._id!.toString(),
+		postId: post._id?.toString(),
 		content: post.content,
 		authorId: userId,
 	});
@@ -320,7 +318,7 @@ const deletePost = async (id: string, userId: string): Promise<void> => {
 
 	// Store threadId before deletion for socket emit
 	const threadId = post.threadId.toString();
-	const postId = post._id!.toString();
+	const postId = post._id?.toString();
 
 	// Soft delete post
 	post.status = "deleted";
@@ -355,7 +353,7 @@ const deletePostReplies = async (postId: string): Promise<void> => {
 		await ThreadService.decrementPostCount(reply.threadId.toString());
 
 		// Recursively delete nested replies
-		await deletePostReplies(reply._id!.toString());
+		await deletePostReplies(reply._id?.toString());
 	}
 };
 

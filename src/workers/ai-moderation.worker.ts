@@ -2,7 +2,6 @@ import { Types } from "mongoose";
 import { QUEUES } from "../config/rabbitmq";
 import { Report } from "../modules/admin/admin.model";
 import { Post } from "../modules/post/post.model";
-import { User } from "../modules/user/user.model";
 import { AIService } from "../services/ai.service";
 import { queueService } from "../services/queue.service";
 

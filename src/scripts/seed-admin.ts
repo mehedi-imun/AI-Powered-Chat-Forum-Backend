@@ -36,7 +36,7 @@ const seedAdmin = async () => {
 		console.log("📧 Email:    admin@chatforum.com");
 		console.log("🔑 Password: Admin@1234");
 		console.log("👤 Role:     Admin");
-		console.log("🆔 User ID:  " + admin._id);
+		console.log(`🆔 User ID:  ${admin._id}`);
 		console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 		console.log("✅ You can now login with these credentials!");
 

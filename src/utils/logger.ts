@@ -52,8 +52,8 @@ const logger = pino(
 
 // File transports for production (using pino streams)
 if (env.NODE_ENV === "production") {
-	const fs = require("fs");
-	const path = require("path");
+	const fs = require("node:fs");
+	const path = require("node:path");
 
 	// Ensure logs directory exists
 	const logsDir = path.join(process.cwd(), "logs");

@@ -116,14 +116,14 @@ export const queueService = {
 				try {
 					const content = JSON.parse(msg.content.toString());
 					await callback(content);
-					channel!.ack(msg); // Acknowledge successful processing
+					channel?.ack(msg); // Acknowledge successful processing
 				} catch (error) {
 					console.error(
 						`❌ Error processing message from ${queueName}:`,
 						error,
 					);
 					// Reject and requeue for retry
-					channel!.nack(msg, false, true);
+					channel?.nack(msg, false, true);
 				}
 			}
 		});

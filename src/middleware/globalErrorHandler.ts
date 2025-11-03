@@ -9,7 +9,7 @@ import handleValidationError from "../errors/handleValidationError";
 import handleZodError from "../errors/handleZodError";
 import type { TErrorSources } from "../interface/error";
 
-const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 	let statusCode = 500;
 	let message = "Something went wrong!";
 	let errorSources: TErrorSources = [

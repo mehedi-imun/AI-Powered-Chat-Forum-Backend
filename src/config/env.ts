@@ -92,13 +92,13 @@ const loadEnvVariables = (): EnvConfig => {
 		RABBITMQ_URL: process.env.RABBITMQ_URL!,
 
 		SMTP_HOST: process.env.SMTP_HOST!,
-		SMTP_PORT: parseInt(process.env.SMTP_PORT!),
+		SMTP_PORT: parseInt(process.env.SMTP_PORT!, 10),
 		SMTP_USER: process.env.SMTP_USER!,
 		SMTP_PASSWORD: process.env.SMTP_PASSWORD!,
 		EMAIL_FROM: process.env.EMAIL_FROM!,
 
-		RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS!),
-		RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS!),
+		RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS!, 10),
+		RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS!, 10),
 
 		OPENAI_API_KEY: process.env.OPENAI_API_KEY,
 		AI_MODEL: process.env.AI_MODEL,

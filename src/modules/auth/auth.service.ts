@@ -36,7 +36,7 @@ const login = async (
 	}
 
 	const tokenPayload = {
-		userId: user._id!.toString(),
+		userId: user._id?.toString(),
 		email: user.email,
 		role: user.role,
 	};
@@ -76,7 +76,7 @@ const refreshAccessToken = async (
 		}
 
 		const tokenPayload = {
-			userId: user._id!.toString(),
+			userId: user._id?.toString(),
 			email: user.email,
 			role: user.role,
 		};
@@ -86,7 +86,7 @@ const refreshAccessToken = async (
 		return {
 			accessToken: newAccessToken,
 		};
-	} catch (error) {
+	} catch (_error) {
 		throw new AppError(httpStatus.UNAUTHORIZED, "Invalid refresh token");
 	}
 };
