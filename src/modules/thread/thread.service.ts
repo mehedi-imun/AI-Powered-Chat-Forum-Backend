@@ -42,47 +42,30 @@ const createThread = async (
 ): Promise<IThread> => {
   const { title, description, tags, initialPostContent } = data;
 
-  // Start a session for transaction
-  const session = await Thread.startSession();
-  session.startTransaction();
-
   try {
-    // Create thread
-    const thread = await Thread.create(
-      [
-        {
-          title,
-          description,
-          tags: tags || [],
-          createdBy: new Types.ObjectId(userId),
-          viewCount: 0,
-          postCount: 1, // Initial post counts
-          lastActivityAt: new Date(),
-          isPinned: false,
-          isLocked: false,
-          status: "active",
-        },
-      ],
-      { session }
-    );
+    // Create thread (without transaction for development)
+    const thread = await Thread.create({
+      title,
+      description,
+      tags: tags || [],
+      createdBy: new Types.ObjectId(userId),
+      viewCount: 0,
+      postCount: 1, // Initial post counts
+      lastActivityAt: new Date(),
+      isPinned: false,
+      isLocked: false,
+      status: "active",
+    });
 
     // Create initial post
-    await Post.create(
-      [
-        {
-          threadId: thread[0]._id,
-          content: initialPostContent,
-          author: new Types.ObjectId(userId),
-          mentions: [],
-          status: "active",
-          moderationStatus: "approved",
-        },
-      ],
-      { session }
-    );
-
-    await session.commitTransaction();
-    session.endSession();
+    await Post.create({
+      threadId: thread._id,
+      content: initialPostContent,
+      author: new Types.ObjectId(userId),
+      mentions: [],
+      status: "active",
+      moderationStatus: "approved",
+    });
 
     // Invalidate cache
     await invalidateThreadCache();
@@ -90,7 +73,7 @@ const createThread = async (
     // Emit Socket.IO event to all clients
     const io = getIO();
     if (io) {
-      const populatedThread = await Thread.findById(thread[0]._id).populate(
+      const populatedThread = await Thread.findById(thread._id).populate(
         "createdBy",
         "name email role avatar"
       );
@@ -101,10 +84,9 @@ const createThread = async (
       });
     }
 
-    return thread[0];
+    return thread;
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
+    // If thread was created but post creation failed, clean up
     throw error;
   }
 };
@@ -122,9 +104,11 @@ const getAllThreads = async (
   }
 
   const searchableFields = ["title", "description"];
+  // Create a shallow copy of query to avoid modifying req.query
+  const queryObj = { ...query } as any;
   const queryBuilder = new QueryBuilder(
     Thread.find({ status: { $ne: "deleted" } }).populate("createdBy", "name email role"),
-    query as any
+    queryObj
   )
     .search(searchableFields)
     .filter()

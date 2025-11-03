@@ -38,7 +38,8 @@ export const validateRequest =
 
       // Update request with validated data
       req.body = validated.body;
-      if (validated.query) req.query = validated.query as any;
+      // Note: req.query is read-only, so we can't reassign it
+      // The validated query is already in req.query from Express parsing
       if (validated.params) req.params = validated.params as any;
 
       next();
