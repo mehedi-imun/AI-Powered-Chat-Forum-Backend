@@ -5,7 +5,7 @@ import { cacheService } from "../../config/redis";
 import { getIO } from "../../config/socket";
 import QueryBuilder from "../../utils/queryBuilder";
 import { Post } from "../post/post.model";
-import { User } from "../user/user.model";
+// import { User } from "../user/user.model";
 import {
   IThread,
   IThreadCreate,

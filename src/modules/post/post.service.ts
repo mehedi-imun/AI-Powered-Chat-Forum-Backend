@@ -4,6 +4,7 @@ import AppError from "../../errors/AppError";
 import { QUEUES } from "../../config/rabbitmq";
 import { publishNotification, publishAIModeration } from "../../services/queue.service";
 import { getIO } from "../../config/socket";
+import { NotificationService } from "../notification/notification.service";
 import { User } from "../user/user.model";
 import { Thread } from "../thread/thread.model";
 import { ThreadService } from "../thread/thread.service";
@@ -74,11 +75,23 @@ const createPost = async (
     }).select("_id");
 
     if (mentionedUsers.length > 0) {
-      post.mentions = mentionedUsers.map((u) => u._id) as any;
+      post.mentions = mentionedUsers.map((u: any) => u._id) as any;
       await post.save();
 
-      // Publish notification jobs for each mention
+      // Create in-app notifications for mentions
       for (const mentionedUser of mentionedUsers) {
+        // Only notify if not mentioning themselves
+        if (mentionedUser._id.toString() !== userId) {
+          await NotificationService.createMentionNotification(
+            mentionedUser._id.toString(),
+            userId,
+            post._id!.toString(),
+            threadId,
+            thread.title
+          );
+        }
+
+        // Also publish to RabbitMQ for email notifications
         await publishNotification({
           type: "mention",
           userId: mentionedUser._id.toString(),
@@ -94,6 +107,16 @@ const createPost = async (
   if (parentId) {
     const parentPost = await Post.findById(parentId);
     if (parentPost && parentPost.author.toString() !== userId) {
+      // Create in-app notification
+      await NotificationService.createReplyNotification(
+        parentPost.author.toString(),
+        userId,
+        post._id!.toString(),
+        threadId,
+        thread.title
+      );
+
+      // Also publish to RabbitMQ for email notifications
       await publishNotification({
         type: "reply",
         userId: parentPost.author.toString(),
