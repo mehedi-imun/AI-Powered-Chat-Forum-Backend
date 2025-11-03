@@ -18,6 +18,9 @@ interface EnvConfig {
   // Redis
   REDIS_URL: string;
 
+  // RabbitMQ
+  RABBITMQ_URL: string;
+
   // Email
   SMTP_HOST: string;
   SMTP_PORT: number;
@@ -28,16 +31,6 @@ interface EnvConfig {
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: number;
   RATE_LIMIT_MAX_REQUESTS: number;
-
-  // Stripe
-  STRIPE_SECRET_KEY: string;
-  STRIPE_WEBHOOK_SECRET: string;
-  STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID: string;
-  STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID: string;
-  STRIPE_BUSINESS_MONTHLY_PRICE_ID: string;
-  STRIPE_BUSINESS_ANNUAL_PRICE_ID: string;
-  STRIPE_ENTERPRISE_MONTHLY_PRICE_ID: string;
-  STRIPE_ENTERPRISE_ANNUAL_PRICE_ID: string;
 }
 
 // Function to load environment variables and validate their existence
@@ -74,12 +67,15 @@ const loadEnvVariables = (): EnvConfig => {
     // Redis
     REDIS_URL: process.env.REDIS_URL || "redis://localhost:6379",
 
+    // RabbitMQ
+    RABBITMQ_URL: process.env.RABBITMQ_URL || "amqp://localhost:5672",
+
     // Email
     SMTP_HOST: process.env.SMTP_HOST || "smtp.gmail.com",
     SMTP_PORT: parseInt(process.env.SMTP_PORT || "587"),
     SMTP_USER: process.env.SMTP_USER || "",
     SMTP_PASSWORD: process.env.SMTP_PASSWORD || "",
-    EMAIL_FROM: process.env.EMAIL_FROM || "noreply@teammanagement.com",
+    EMAIL_FROM: process.env.EMAIL_FROM || "noreply@chatforum.com",
 
     // Rate Limiting
     RATE_LIMIT_WINDOW_MS: parseInt(
@@ -88,22 +84,6 @@ const loadEnvVariables = (): EnvConfig => {
     RATE_LIMIT_MAX_REQUESTS: parseInt(
       process.env.RATE_LIMIT_MAX_REQUESTS || "100"
     ),
-
-    // Stripe
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "",
-    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || "",
-    STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID:
-      process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID || "",
-    STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID:
-      process.env.STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID || "",
-    STRIPE_BUSINESS_MONTHLY_PRICE_ID:
-      process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID || "",
-    STRIPE_BUSINESS_ANNUAL_PRICE_ID:
-      process.env.STRIPE_BUSINESS_ANNUAL_PRICE_ID || "",
-    STRIPE_ENTERPRISE_MONTHLY_PRICE_ID:
-      process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID || "",
-    STRIPE_ENTERPRISE_ANNUAL_PRICE_ID:
-      process.env.STRIPE_ENTERPRISE_ANNUAL_PRICE_ID || "",
   };
 };
 
