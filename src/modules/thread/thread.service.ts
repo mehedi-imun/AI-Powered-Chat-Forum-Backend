@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import { Types } from "mongoose";
 import AppError from "../../errors/AppError";
 import { cacheService } from "../../config/redis";
+import { getIO } from "../../config/socket";
 import QueryBuilder from "../../utils/queryBuilder";
 import { Post } from "../post/post.model";
 import { User } from "../user/user.model";
@@ -85,6 +86,20 @@ const createThread = async (
 
     // Invalidate cache
     await invalidateThreadCache();
+
+    // Emit Socket.IO event to all clients
+    const io = getIO();
+    if (io) {
+      const populatedThread = await Thread.findById(thread[0]._id).populate(
+        "createdBy",
+        "name email role avatar"
+      );
+      
+      io.emit("thread:created", {
+        thread: populatedThread,
+        timestamp: new Date(),
+      });
+    }
 
     return thread[0];
   } catch (error) {
@@ -229,7 +244,7 @@ const updateThread = async (
   const updatedThread = await Thread.findByIdAndUpdate(id, data, {
     new: true,
     runValidators: true,
-  });
+  }).populate("createdBy", "name email role avatar");
 
   if (!updatedThread) {
     throw new AppError(httpStatus.NOT_FOUND, "Thread not found");
@@ -237,6 +252,20 @@ const updateThread = async (
 
   // Invalidate cache
   await invalidateThreadCache(id);
+
+  // Emit Socket.IO event to thread room and all clients
+  const io = getIO();
+  if (io) {
+    io.emit("thread:updated", {
+      thread: updatedThread,
+      timestamp: new Date(),
+    });
+    
+    io.to(`thread:${id}`).emit("thread:updated", {
+      thread: updatedThread,
+      timestamp: new Date(),
+    });
+  }
 
   return updatedThread;
 };
@@ -268,6 +297,20 @@ const deleteThread = async (id: string, userId: string): Promise<void> => {
 
   // Invalidate cache
   await invalidateThreadCache(id);
+
+  // Emit Socket.IO event to thread room and all clients
+  const io = getIO();
+  if (io) {
+    io.emit("thread:deleted", {
+      threadId: id,
+      timestamp: new Date(),
+    });
+    
+    io.to(`thread:${id}`).emit("thread:deleted", {
+      threadId: id,
+      timestamp: new Date(),
+    });
+  }
 };
 
 // Search threads by keyword

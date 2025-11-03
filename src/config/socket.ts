@@ -98,6 +98,9 @@ export const getSocketIO = (): SocketIOServer | null => {
   return io;
 };
 
+// Alias for convenience
+export const getIO = getSocketIO;
+
 // Utility functions to emit events
 
 /**

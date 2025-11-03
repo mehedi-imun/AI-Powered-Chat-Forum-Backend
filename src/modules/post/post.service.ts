@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import AppError from "../../errors/AppError";
 import { QUEUES } from "../../config/rabbitmq";
 import { publishNotification, publishAIModeration } from "../../services/queue.service";
+import { getIO } from "../../config/socket";
 import { User } from "../user/user.model";
 import { Thread } from "../thread/thread.model";
 import { ThreadService } from "../thread/thread.service";
@@ -109,6 +110,22 @@ const createPost = async (
     content: post.content,
     authorId: userId,
   });
+
+  // Emit Socket.IO event to thread room
+  const io = getIO();
+  if (io) {
+    const populatedPost = await Post.findById(post._id).populate(
+      "author",
+      "name email role avatar"
+    );
+    
+    io.to(`thread:${threadId}`).emit("post:created", {
+      post: populatedPost,
+      threadId,
+      parentId: parentId || null,
+      timestamp: new Date(),
+    });
+  }
 
   return post;
 };
@@ -249,6 +266,21 @@ const updatePost = async (
     authorId: userId,
   });
 
+  // Emit Socket.IO event to thread room
+  const io = getIO();
+  if (io) {
+    const populatedPost = await Post.findById(post._id).populate(
+      "author",
+      "name email role avatar"
+    );
+    
+    io.to(`thread:${post.threadId.toString()}`).emit("post:updated", {
+      post: populatedPost,
+      threadId: post.threadId.toString(),
+      timestamp: new Date(),
+    });
+  }
+
   return post;
 };
 
@@ -271,15 +303,29 @@ const deletePost = async (id: string, userId: string): Promise<void> => {
     );
   }
 
+  // Store threadId before deletion for socket emit
+  const threadId = post.threadId.toString();
+  const postId = post._id!.toString();
+
   // Soft delete post
   post.status = "deleted";
   await post.save();
 
   // Decrement thread post count
-  await ThreadService.decrementPostCount(post.threadId.toString());
+  await ThreadService.decrementPostCount(threadId);
 
   // Soft delete all replies (recursive)
   await deletePostReplies(id);
+
+  // Emit Socket.IO event to thread room
+  const io = getIO();
+  if (io) {
+    io.to(`thread:${threadId}`).emit("post:deleted", {
+      postId,
+      threadId,
+      timestamp: new Date(),
+    });
+  }
 };
 
 // Helper to delete all replies recursively
