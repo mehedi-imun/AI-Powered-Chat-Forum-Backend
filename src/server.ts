@@ -22,9 +22,9 @@ async function startServer() {
     try {
       connectRedis();
     } catch (redisError) {
-      logger.warn("⚠️  Redis connection failed, continuing without cache", {
+      logger.warn({
         error: redisError,
-      });
+      }, "⚠️  Redis connection failed, continuing without cache");
     }
 
     // Connect to RabbitMQ
@@ -37,8 +37,8 @@ async function startServer() {
       logger.info("✅ AI Workers started successfully");
     } catch (rabbitMQError) {
       logger.warn(
-        "⚠️  RabbitMQ connection failed, continuing without queue",
-        { error: rabbitMQError }
+        { error: rabbitMQError },
+        "⚠️  RabbitMQ connection failed, continuing without queue"
       );
     }
 
@@ -58,7 +58,7 @@ async function startServer() {
       logger.info(`🌐 API URL: http://localhost:${env.PORT}`);
     });
   } catch (err) {
-    logger.error("❌ Failed to start server", err);
+    logger.error({ err }, "❌ Failed to start server");
     process.exit(1);
   }
 }
@@ -95,7 +95,7 @@ process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 process.on("unhandledRejection", (err) => {
-  logger.error("😈 Unhandled Rejection detected, shutting down", err);
+  logger.error({ err }, "😈 Unhandled Rejection detected, shutting down");
   if (server) {
     server.close(() => {
       process.exit(1);
@@ -105,7 +105,7 @@ process.on("unhandledRejection", (err) => {
 });
 
 process.on("uncaughtException", (err) => {
-  logger.error("😈 Uncaught Exception detected, shutting down", err);
+  logger.error({ err }, "😈 Uncaught Exception detected, shutting down");
   process.exit(1);
 });
 

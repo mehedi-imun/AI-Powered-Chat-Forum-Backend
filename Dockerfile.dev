@@ -1,0 +1,20 @@
+# Development Dockerfile - optimized for hot reload
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies (including devDependencies)
+COPY package*.json ./
+RUN npm install
+
+# Copy source code (will be overridden by volume mount for hot reload)
+COPY . .
+
+# Create logs directory
+RUN mkdir -p logs
+
+# Expose port
+EXPOSE 5000
+
+# Use npx to ensure binary is found from node_modules
+CMD ["npx", "ts-node-dev", "--respawn", "--transpile-only", "src/server.ts"]
