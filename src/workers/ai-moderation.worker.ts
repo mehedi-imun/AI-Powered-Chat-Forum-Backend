@@ -1,10 +1,10 @@
-import { queueService } from "../services/queue.service";
+import { Types } from "mongoose";
 import { QUEUES } from "../config/rabbitmq";
-import { AIService } from "../services/ai.service";
+import { Report } from "../modules/admin/admin.model";
 import { Post } from "../modules/post/post.model";
 import { User } from "../modules/user/user.model";
-import { Report } from "../modules/admin/admin.model";
-import { Types } from "mongoose";
+import { AIService } from "../services/ai.service";
+import { queueService } from "../services/queue.service";
 
 /**
  * AI Moderation Worker
@@ -12,91 +12,95 @@ import { Types } from "mongoose";
  * Analyzes post content for spam, toxicity, and inappropriate content
  */
 export const startAIModerationWorker = async (): Promise<void> => {
-  console.log("🤖 Starting AI Moderation Worker...");
+	console.log("🤖 Starting AI Moderation Worker...");
 
-  await queueService.consumeQueue(
-    QUEUES.AI_MODERATION,
-    async (message: any) => {
-      try {
-        console.log(`📦 Received message:`, JSON.stringify(message, null, 2));
-        
-        const { postId, content, authorId } = message;
+	await queueService.consumeQueue(
+		QUEUES.AI_MODERATION,
+		async (message: any) => {
+			try {
+				console.log(`📦 Received message:`, JSON.stringify(message, null, 2));
 
-        console.log(`🔍 Moderating post: ${postId}`);
+				const { postId, content, authorId } = message;
 
-        const moderationResult = await AIService.moderateContent(content);
+				console.log(`🔍 Moderating post: ${postId}`);
 
-        const post = await Post.findById(postId);
-        if (!post) {
-          console.error(`❌ Post not found: ${postId}`);
-          return;
-        }
+				const moderationResult = await AIService.moderateContent(content);
 
-        post.aiScore = {
-          spam: moderationResult.spamScore,
-          toxicity: moderationResult.toxicityScore,
-          inappropriate: moderationResult.inappropriateScore,
-        };
+				const post = await Post.findById(postId);
+				if (!post) {
+					console.error(`❌ Post not found: ${postId}`);
+					return;
+				}
 
-        if (moderationResult.recommendation === "reject") {
-          post.moderationStatus = "rejected";
-          post.status = "deleted";
-          console.log(`🚫 Post ${postId} rejected by AI: ${moderationResult.reasoning}`);
+				post.aiScore = {
+					spam: moderationResult.spamScore,
+					toxicity: moderationResult.toxicityScore,
+					inappropriate: moderationResult.inappropriateScore,
+				};
 
-          await Report.create({
-            reportedContentType: "post",
-            reportedContentId: new Types.ObjectId(postId),
-            reportType: moderationResult.isSpam
-              ? "spam"
-              : moderationResult.isToxic
-                ? "harassment"
-                : "inappropriate",
-            description: `AI Moderation: ${moderationResult.reasoning}. Scores - Spam: ${moderationResult.spamScore}, Toxicity: ${moderationResult.toxicityScore}, Inappropriate: ${moderationResult.inappropriateScore}`,
-            reportedBy: new Types.ObjectId(authorId), // System report
-            status: "reviewing",
-          });
-        } else if (moderationResult.recommendation === "review") {
-          post.moderationStatus = "flagged";
-          console.log(`⚠️  Post ${postId} flagged for review: ${moderationResult.reasoning}`);
+				if (moderationResult.recommendation === "reject") {
+					post.moderationStatus = "rejected";
+					post.status = "deleted";
+					console.log(
+						`🚫 Post ${postId} rejected by AI: ${moderationResult.reasoning}`,
+					);
 
-          await Report.create({
-            reportedContentType: "post",
-            reportedContentId: new Types.ObjectId(postId),
-            reportType: moderationResult.isSpam
-              ? "spam"
-              : moderationResult.isToxic
-                ? "harassment"
-                : "inappropriate",
-            description: `AI Moderation (Review Needed): ${moderationResult.reasoning}`,
-            reportedBy: new Types.ObjectId(authorId),
-            status: "pending",
-          });
-        } else {
-          post.moderationStatus = "approved";
-          console.log(`✅ Post ${postId} approved by AI`);
-        }
+					await Report.create({
+						reportedContentType: "post",
+						reportedContentId: new Types.ObjectId(postId),
+						reportType: moderationResult.isSpam
+							? "spam"
+							: moderationResult.isToxic
+								? "harassment"
+								: "inappropriate",
+						description: `AI Moderation: ${moderationResult.reasoning}. Scores - Spam: ${moderationResult.spamScore}, Toxicity: ${moderationResult.toxicityScore}, Inappropriate: ${moderationResult.inappropriateScore}`,
+						reportedBy: new Types.ObjectId(authorId), // System report
+						status: "reviewing",
+					});
+				} else if (moderationResult.recommendation === "review") {
+					post.moderationStatus = "flagged";
+					console.log(
+						`⚠️  Post ${postId} flagged for review: ${moderationResult.reasoning}`,
+					);
 
-        await post.save();
+					await Report.create({
+						reportedContentType: "post",
+						reportedContentId: new Types.ObjectId(postId),
+						reportType: moderationResult.isSpam
+							? "spam"
+							: moderationResult.isToxic
+								? "harassment"
+								: "inappropriate",
+						description: `AI Moderation (Review Needed): ${moderationResult.reasoning}`,
+						reportedBy: new Types.ObjectId(authorId),
+						status: "pending",
+					});
+				} else {
+					post.moderationStatus = "approved";
+					console.log(`✅ Post ${postId} approved by AI`);
+				}
 
-        console.log(
-          `✅ Moderation complete for post ${postId}: ${moderationResult.recommendation}`
-        );
-      } catch (error: any) {
-        console.error("❌ AI Moderation Worker error:", error.message);
-        throw error; // Re-throw to trigger retry
-      }
-    },
-    {
-      prefetch: 5, // Process up to 5 messages concurrently
-    }
-  );
+				await post.save();
 
-  console.log("✅ AI Moderation Worker started");
+				console.log(
+					`✅ Moderation complete for post ${postId}: ${moderationResult.recommendation}`,
+				);
+			} catch (error: any) {
+				console.error("❌ AI Moderation Worker error:", error.message);
+				throw error; // Re-throw to trigger retry
+			}
+		},
+		{
+			prefetch: 5, // Process up to 5 messages concurrently
+		},
+	);
+
+	console.log("✅ AI Moderation Worker started");
 };
 
 /**
  * Stop AI Moderation Worker
  */
 export const stopAIModerationWorker = async (): Promise<void> => {
-  console.log("⏹️  Stopping AI Moderation Worker...");
+	console.log("⏹️  Stopping AI Moderation Worker...");
 };

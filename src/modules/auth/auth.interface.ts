@@ -1,22 +1,22 @@
 export interface ILoginResponse {
-  user: {
-    _id: string;
-    email: string;
-    name: string;
-    role: string;
-    avatar?: string;
-    bio?: string;
-  };
-  accessToken: string;
-  refreshToken: string;
+	user: {
+		_id: string;
+		email: string;
+		name: string;
+		role: string;
+		avatar?: string;
+		bio?: string;
+	};
+	accessToken: string;
+	refreshToken: string;
 }
 
 export interface IRefreshTokenResponse {
-  accessToken: string;
+	accessToken: string;
 }
 
 export interface ITokenPayload {
-  userId: string;
-  email: string;
-  role: "Admin" | "Moderator" | "Member";
+	userId: string;
+	email: string;
+	role: "Admin" | "Moderator" | "Member";
 }

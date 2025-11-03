@@ -11,12 +11,17 @@ router.get("/", UserController.getAllUsers);
 router.get("/:id", UserController.getUserById);
 
 router.patch(
-  "/me",
-  authenticate,
-  validateRequest(updateUserSchema),
-  UserController.updateUser
+	"/me",
+	authenticate,
+	validateRequest(updateUserSchema),
+	UserController.updateUser,
 );
 
-router.delete("/:id", authenticate, authorize("Admin"), UserController.deleteUser);
+router.delete(
+	"/:id",
+	authenticate,
+	authorize("Admin"),
+	UserController.deleteUser,
+);
 
 export const UserRoutes = router;
