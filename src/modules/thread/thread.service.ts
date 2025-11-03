@@ -366,6 +366,38 @@ const decrementPostCount = async (threadId: string): Promise<void> => {
   await invalidateThreadCache(threadId);
 };
 
+// Request thread summary (enqueue AI job)
+const requestThreadSummary = async (threadId: string): Promise<void> => {
+  // Verify thread exists
+  const thread = await Thread.findById(threadId);
+  if (!thread) {
+    throw new AppError(httpStatus.NOT_FOUND, "Thread not found");
+  }
+
+  // Import queueService dynamically to avoid circular dependencies
+  const { queueService } = await import("../../config/rabbitmq");
+  
+  // Enqueue AI summary job
+  await queueService.publishToQueue("ai-summary", {
+    threadId: threadId.toString(),
+  });
+};
+
+// Get thread summary from cache
+const getThreadSummary = async (threadId: string): Promise<any | null> => {
+  // Verify thread exists
+  const thread = await Thread.findById(threadId);
+  if (!thread) {
+    throw new AppError(httpStatus.NOT_FOUND, "Thread not found");
+  }
+
+  // Get summary from cache
+  const cacheKey = `thread:summary:${threadId}`;
+  const summary = await cacheService.getJSON(cacheKey);
+
+  return summary || null;
+};
+
 export const ThreadService = {
   createThread,
   getAllThreads,
@@ -377,4 +409,6 @@ export const ThreadService = {
   getThreadsByUser,
   incrementPostCount,
   decrementPostCount,
+  requestThreadSummary,
+  getThreadSummary,
 };

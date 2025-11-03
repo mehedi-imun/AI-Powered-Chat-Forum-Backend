@@ -41,4 +41,18 @@ router.delete(
   ThreadController.deleteThread
 );
 
+// AI Summary routes
+router.post(
+  "/:id/summary",
+  authenticate,
+  validateRequest(getThreadByIdSchema),
+  ThreadController.requestThreadSummary
+);
+
+router.get(
+  "/:id/summary",
+  validateRequest(getThreadByIdSchema),
+  ThreadController.getThreadSummary
+);
+
 export const ThreadRoutes = router;

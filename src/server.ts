@@ -6,6 +6,8 @@ import { connectRedis, disconnectRedis } from "./config/redis";
 import { connectRabbitMQ, disconnectRabbitMQ } from "./config/rabbitmq";
 import { initializeSocketIO } from "./config/socket";
 import { initializeCronJobs, stopAllCronJobs } from "./services/cron.service";
+import { startAIModerationWorker } from "./workers/ai-moderation.worker";
+import { startAISummaryWorker } from "./workers/ai-summary.worker";
 import logger from "./utils/logger";
 
 let server: Server | null = null;
@@ -28,6 +30,11 @@ async function startServer() {
     // Connect to RabbitMQ
     try {
       await connectRabbitMQ();
+      
+      // Start AI workers after RabbitMQ connection
+      await startAIModerationWorker();
+      await startAISummaryWorker();
+      logger.info("✅ AI Workers started successfully");
     } catch (rabbitMQError) {
       logger.warn(
         "⚠️  RabbitMQ connection failed, continuing without queue",

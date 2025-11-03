@@ -75,3 +75,52 @@ export const disconnectRabbitMQ = async (): Promise<void> => {
     connection = null;
   }
 };
+
+// Queue Service for publishing and consuming messages
+export const queueService = {
+  /**
+   * Publish a message to a queue
+   */
+  publishToQueue: async (queueName: string, message: any): Promise<void> => {
+    if (!channel) {
+      throw new Error("RabbitMQ channel not initialized");
+    }
+
+    const messageBuffer = Buffer.from(JSON.stringify(message));
+    channel.sendToQueue(queueName, messageBuffer, {
+      persistent: true,
+    });
+  },
+
+  /**
+   * Consume messages from a queue
+   */
+  consumeQueue: async (
+    queueName: string,
+    callback: (message: any) => Promise<void>,
+    options: { prefetch?: number } = {}
+  ): Promise<void> => {
+    if (!channel) {
+      throw new Error("RabbitMQ channel not initialized");
+    }
+
+    // Set prefetch count for concurrent processing
+    if (options.prefetch) {
+      channel.prefetch(options.prefetch);
+    }
+
+    channel.consume(queueName, async (msg) => {
+      if (msg) {
+        try {
+          const content = JSON.parse(msg.content.toString());
+          await callback(content);
+          channel!.ack(msg); // Acknowledge successful processing
+        } catch (error) {
+          console.error(`❌ Error processing message from ${queueName}:`, error);
+          // Reject and requeue for retry
+          channel!.nack(msg, false, true);
+        }
+      }
+    });
+  },
+};

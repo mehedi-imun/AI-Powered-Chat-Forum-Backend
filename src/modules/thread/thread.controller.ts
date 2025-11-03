@@ -117,6 +117,34 @@ const getThreadsByUser = catchAsync(async (req, res) => {
   });
 });
 
+// Request thread summary
+const requestThreadSummary = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  await ThreadService.requestThreadSummary(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.ACCEPTED,
+    success: true,
+    message: "Thread summary generation requested. Check back in a moment.",
+    data: null,
+  });
+});
+
+// Get thread summary
+const getThreadSummary = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const summary = await ThreadService.getThreadSummary(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: summary
+      ? "Thread summary retrieved successfully"
+      : "Summary not yet available. Request one first.",
+    data: summary,
+  });
+});
+
 export const ThreadController = {
   createThread,
   getAllThreads,
@@ -126,4 +154,6 @@ export const ThreadController = {
   deleteThread,
   searchThreads,
   getThreadsByUser,
+  requestThreadSummary,
+  getThreadSummary,
 };
