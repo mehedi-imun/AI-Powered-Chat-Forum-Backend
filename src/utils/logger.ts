@@ -2,56 +2,36 @@ import pino from "pino";
 import pinoPretty from "pino-pretty";
 import env from "../config/env";
 
-const prettyStream = pinoPretty({
-	colorize: true,
-	translateTime: "SYS:HH:MM:ss",
-	ignore: "pid,hostname",
-	singleLine: false,
-	messageFormat: "{msg}",
-	customColors: "info:green,warn:yellow,error:red,debug:blue",
-	levelFirst: false,
-	hideObject: false,
-});
+// Development: Pretty console output only (no log files)
+// Production: JSON to files + console
+const isDevelopment = env.NODE_ENV === "development";
 
-// Pino configuration
-const logger = pino(
-	{
-		level: env.NODE_ENV === "development" ? "debug" : "info",
+let logger: pino.Logger;
 
-		// Base configuration
-		base: {
-			env: env.NODE_ENV,
+if (isDevelopment) {
+	// Development mode: Pretty console output only (no files)
+	const prettyStream = pinoPretty({
+		colorize: true,
+		translateTime: "SYS:HH:MM:ss",
+		ignore: "pid,hostname",
+		singleLine: false,
+		messageFormat: "{msg}",
+		customColors: "info:green,warn:yellow,error:red,debug:blue",
+		levelFirst: true,
+		hideObject: false,
+	});
+
+	logger = pino(
+		{
+			level: "debug",
+			base: undefined,
 		},
+		prettyStream,
+	);
 
-		// Timestamp
-		timestamp: pino.stdTimeFunctions.isoTime,
-
-		// Serializers for error objects
-		serializers: {
-			err: pino.stdSerializers.err,
-			error: pino.stdSerializers.err,
-			req: pino.stdSerializers.req,
-			res: pino.stdSerializers.res,
-		},
-
-		// Format errors
-		formatters: {
-			level: (label) => {
-				return { level: label };
-			},
-			bindings: (bindings) => {
-				return {
-					pid: bindings.pid,
-					host: bindings.hostname,
-				};
-			},
-		},
-	},
-	env.NODE_ENV === "development" ? prettyStream : undefined,
-);
-
-// File transports for production (using pino streams)
-if (env.NODE_ENV === "production") {
+	console.log("🎨 Logger mode: Development (Pretty Console, No Files)");
+} else {
+	// Production mode: JSON logs to files + console
 	const fs = require("node:fs");
 	const path = require("node:path");
 
@@ -61,6 +41,7 @@ if (env.NODE_ENV === "production") {
 		fs.mkdirSync(logsDir, { recursive: true });
 	}
 
+	// File streams
 	const errorStream = pino.destination({
 		dest: path.join(logsDir, "error.log"),
 		sync: false,
@@ -71,10 +52,26 @@ if (env.NODE_ENV === "production") {
 		sync: false,
 	});
 
+	// Main logger for console
+	logger = pino({
+		level: "info",
+		base: {
+			env: env.NODE_ENV,
+		},
+		timestamp: pino.stdTimeFunctions.isoTime,
+		serializers: {
+			err: pino.stdSerializers.err,
+			error: pino.stdSerializers.err,
+			req: pino.stdSerializers.req,
+			res: pino.stdSerializers.res,
+		},
+	});
+
+	// Separate file loggers
 	const errorLogger = pino({ level: "error" }, errorStream);
 	const combinedLogger = pino(combinedStream);
 
-	// Intercept and duplicate error logs
+	// Intercept and duplicate error logs to files
 	const originalError = logger.error.bind(logger);
 	logger.error = (obj: any, msg?: string, ...args: any[]) => {
 		originalError(obj, msg, ...args);
