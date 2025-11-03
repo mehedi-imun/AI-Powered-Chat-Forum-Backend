@@ -15,7 +15,6 @@ class EmailService {
       },
     });
 
-    // Verify connection
     this.verifyConnection();
   }
 

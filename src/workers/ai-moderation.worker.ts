@@ -20,35 +20,29 @@ export const startAIModerationWorker = async (): Promise<void> => {
       try {
         console.log(`📦 Received message:`, JSON.stringify(message, null, 2));
         
-        // Extract from message (consumeQueue already unwraps .data)
         const { postId, content, authorId } = message;
 
         console.log(`🔍 Moderating post: ${postId}`);
 
-        // Call AI service to moderate content
         const moderationResult = await AIService.moderateContent(content);
 
-        // Update post with moderation results
         const post = await Post.findById(postId);
         if (!post) {
           console.error(`❌ Post not found: ${postId}`);
           return;
         }
 
-        // Store AI scores
         post.aiScore = {
           spam: moderationResult.spamScore,
           toxicity: moderationResult.toxicityScore,
           inappropriate: moderationResult.inappropriateScore,
         };
 
-        // Update moderation status based on AI recommendation
         if (moderationResult.recommendation === "reject") {
           post.moderationStatus = "rejected";
           post.status = "deleted";
           console.log(`🚫 Post ${postId} rejected by AI: ${moderationResult.reasoning}`);
 
-          // Create automatic report for admin review
           await Report.create({
             reportedContentType: "post",
             reportedContentId: new Types.ObjectId(postId),
@@ -65,7 +59,6 @@ export const startAIModerationWorker = async (): Promise<void> => {
           post.moderationStatus = "flagged";
           console.log(`⚠️  Post ${postId} flagged for review: ${moderationResult.reasoning}`);
 
-          // Create report for moderator review
           await Report.create({
             reportedContentType: "post",
             reportedContentId: new Types.ObjectId(postId),
@@ -106,5 +99,4 @@ export const startAIModerationWorker = async (): Promise<void> => {
  */
 export const stopAIModerationWorker = async (): Promise<void> => {
   console.log("⏹️  Stopping AI Moderation Worker...");
-  // Worker will stop when RabbitMQ connection closes
 };

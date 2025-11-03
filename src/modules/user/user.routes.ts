@@ -7,11 +7,9 @@ import { updateUserSchema } from "./user.validation";
 
 const router = Router();
 
-// Public routes
 router.get("/", UserController.getAllUsers);
 router.get("/:id", UserController.getUserById);
 
-// Protected routes
 router.patch(
   "/me",
   authenticate,
@@ -19,7 +17,6 @@ router.patch(
   UserController.updateUser
 );
 
-// Admin routes
 router.delete("/:id", authenticate, authorize("Admin"), UserController.deleteUser);
 
 export const UserRoutes = router;

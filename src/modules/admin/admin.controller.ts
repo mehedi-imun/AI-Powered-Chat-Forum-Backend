@@ -3,9 +3,6 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { AdminService } from "./admin.service";
 
-// ==================== Dashboard ====================
-
-// Get dashboard statistics
 const getDashboardStats = catchAsync(async (_req, res) => {
   const stats = await AdminService.getDashboardStats();
 
@@ -17,9 +14,6 @@ const getDashboardStats = catchAsync(async (_req, res) => {
   });
 });
 
-// ==================== User Management ====================
-
-// Get all users with filters
 const getAllUsers = catchAsync(async (req, res) => {
   const result = await AdminService.getAllUsers(req.query);
 
@@ -31,7 +25,6 @@ const getAllUsers = catchAsync(async (req, res) => {
   });
 });
 
-// Update user
 const updateUser = catchAsync(async (req, res) => {
   const { userId } = req.params;
   const adminId = req.user?.userId;
@@ -46,7 +39,6 @@ const updateUser = catchAsync(async (req, res) => {
   });
 });
 
-// Ban user
 const banUser = catchAsync(async (req, res) => {
   const { userId } = req.params;
   const adminId = req.user?.userId;
@@ -79,9 +71,6 @@ const unbanUser = catchAsync(async (req, res) => {
   });
 });
 
-// ==================== Content Moderation ====================
-
-// Create report
 const createReport = catchAsync(async (req, res) => {
   const userId = req.user?.userId;
   const { Types } = require("mongoose");
@@ -99,7 +88,6 @@ const createReport = catchAsync(async (req, res) => {
   });
 });
 
-// Get all reports
 const getAllReports = catchAsync(async (req, res) => {
   const result = await AdminService.getAllReports(req.query);
 
@@ -111,7 +99,6 @@ const getAllReports = catchAsync(async (req, res) => {
   });
 });
 
-// Get report by ID
 const getReportById = catchAsync(async (req, res) => {
   const { reportId } = req.params;
 
@@ -125,7 +112,6 @@ const getReportById = catchAsync(async (req, res) => {
   });
 });
 
-// Take action on report
 const takeReportAction = catchAsync(async (req, res) => {
   const { reportId } = req.params;
   const adminId = req.user?.userId;
@@ -144,9 +130,6 @@ const takeReportAction = catchAsync(async (req, res) => {
   });
 });
 
-// ==================== Activity Logs ====================
-
-// Get activity logs
 const getActivityLogs = catchAsync(async (req, res) => {
   const { adminId, page, limit } = req.query;
 
@@ -164,9 +147,6 @@ const getActivityLogs = catchAsync(async (req, res) => {
   });
 });
 
-// ==================== System Settings ====================
-
-// Get system settings
 const getSystemSettings = catchAsync(async (_req, res) => {
   const settings = await AdminService.getSystemSettings();
 
@@ -178,7 +158,6 @@ const getSystemSettings = catchAsync(async (_req, res) => {
   });
 });
 
-// Update system settings
 const updateSystemSettings = catchAsync(async (req, res) => {
   const adminId = req.user?.userId;
 

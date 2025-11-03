@@ -14,11 +14,9 @@ let server: Server | null = null;
 
 async function startServer() {
   try {
-    // Connect to MongoDB
     await mongoose.connect(env.DATABASE_URL);
     logger.info("✅ MongoDB connected successfully");
 
-    // Connect to Redis
     try {
       connectRedis();
     } catch (redisError) {
@@ -27,11 +25,8 @@ async function startServer() {
       }, "⚠️  Redis connection failed, continuing without cache");
     }
 
-    // Connect to RabbitMQ
     try {
       await connectRabbitMQ();
-      
-      // Start AI workers after RabbitMQ connection
       await startAIModerationWorker();
       await startAISummaryWorker();
       logger.info("✅ AI Workers started successfully");
@@ -42,16 +37,10 @@ async function startServer() {
       );
     }
 
-    // Create HTTP server
     server = createServer(app);
-
-    // Initialize Socket.IO
     initializeSocketIO(server);
-
-    // Initialize cron jobs
     initializeCronJobs();
 
-    // Start HTTP server
     server.listen(env.PORT, () => {
       logger.info(`🚀 Server is running on port ${env.PORT}`);
       logger.info(`📝 Environment: ${env.NODE_ENV}`);
@@ -63,27 +52,17 @@ async function startServer() {
   }
 }
 
-// Graceful shutdown
 async function gracefulShutdown(signal: string) {
   logger.info(`\n${signal} signal received: closing HTTP server`);
 
   if (server) {
     server.close(async () => {
       logger.info("HTTP server closed");
-
-      // Stop cron jobs
       stopAllCronJobs();
-
-      // Close database connection
       await mongoose.connection.close();
       logger.info("MongoDB connection closed");
-
-      // Close Redis connection
       await disconnectRedis();
-
-      // Close RabbitMQ connection
       await disconnectRabbitMQ();
-
       process.exit(0);
     });
   } else {

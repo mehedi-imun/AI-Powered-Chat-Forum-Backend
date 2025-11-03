@@ -11,14 +11,12 @@ import {
 
 const router = Router();
 
-// Public routes (no authentication required for reading)
 router.get("/", validateRequest(queryThreadSchema), ThreadController.getAllThreads);
 router.get("/search", ThreadController.searchThreads);
 router.get("/slug/:slug", ThreadController.getThreadBySlug);
 router.get("/user/:userId", ThreadController.getThreadsByUser);
 router.get("/:id", validateRequest(getThreadByIdSchema), ThreadController.getThreadById);
 
-// Protected routes (authentication required)
 router.post(
   "/",
   authenticate,
@@ -41,7 +39,6 @@ router.delete(
   ThreadController.deleteThread
 );
 
-// AI Summary routes
 router.post(
   "/:id/summary",
   authenticate,

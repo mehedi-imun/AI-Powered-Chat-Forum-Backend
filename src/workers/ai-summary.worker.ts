@@ -19,19 +19,16 @@ export const startAISummaryWorker = async (): Promise<void> => {
       try {
         console.log('📦 Raw summary message:', JSON.stringify(message, null, 2));
         
-        // Extract from message (consumeQueue already unwraps .data)
         const { threadId } = message;
 
         console.log(`📊 Generating summary for thread: ${threadId}`);
 
-        // Get thread details
         const thread = await Thread.findById(threadId);
         if (!thread) {
           console.error(`❌ Thread not found: ${threadId}`);
           return;
         }
 
-        // Get all posts in the thread
         const posts = await Post.find({
           threadId,
           status: "active",
@@ -39,7 +36,7 @@ export const startAISummaryWorker = async (): Promise<void> => {
         })
           .populate("author", "name")
           .sort({ createdAt: 1 })
-          .limit(100) // Limit to first 100 posts for summary
+          .limit(100)
           .lean();
 
         if (posts.length === 0) {
@@ -47,19 +44,16 @@ export const startAISummaryWorker = async (): Promise<void> => {
           return;
         }
 
-        // Format posts for AI
         const formattedPosts = posts.map((post: any) => ({
           content: post.content,
           author: post.author?.name || "Anonymous",
           createdAt: post.createdAt,
         }));
 
-        // Generate summary using AI
         const summaryResult = await AIService.generateThreadSummary(
           formattedPosts
         );
 
-        // Cache the summary (TTL: 1 hour)
         const cacheKey = `thread:summary:${threadId}`;
         await cacheService.setJSON(cacheKey, summaryResult, 3600);
 
@@ -85,5 +79,4 @@ export const startAISummaryWorker = async (): Promise<void> => {
  */
 export const stopAISummaryWorker = async (): Promise<void> => {
   console.log("⏹️  Stopping AI Summary Worker...");
-  // Worker will stop when RabbitMQ connection closes
 };

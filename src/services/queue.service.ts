@@ -96,16 +96,12 @@ export class QueueService {
             );
             console.log(`📥 Processing message from queue: ${queueName}`);
 
-            // Execute handler
             await handler(content.data, msg);
-
-            // Acknowledge message
             this.channel?.ack(msg);
             console.log(`✅ Message processed from queue: ${queueName}`);
           } catch (error) {
             console.error(`Error processing message from ${queueName}:`, error);
 
-            // Reject message and requeue (with limit)
             const retryCount = (msg.properties.headers?.retryCount || 0) + 1;
             const maxRetries = 3;
 
@@ -118,7 +114,7 @@ export class QueueService {
               console.error(
                 `❌ Message failed after ${maxRetries} attempts, rejecting`
               );
-              this.channel?.nack(msg, false, false); // Don't requeue
+              this.channel?.nack(msg, false, false);
             }
           }
         },
@@ -167,10 +163,8 @@ export class QueueService {
   }
 }
 
-// Export singleton instance
 export const queueService = new QueueService();
 
-// Helper functions for common queue operations
 export const publishNotification = (data: any) =>
   queueService.publishToQueue(QUEUES.NOTIFICATIONS, data);
 

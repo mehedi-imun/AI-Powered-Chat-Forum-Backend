@@ -11,12 +11,10 @@ import {
 
 const router = Router();
 
-// Public routes (no authentication required for reading)
 router.get("/thread/:threadId", PostController.getPostsByThread);
 router.get("/user/:userId", PostController.getPostsByUser);
 router.get("/:id", validateRequest(getPostByIdSchema), PostController.getPostById);
 
-// Protected routes (authentication required)
 router.post(
   "/",
   authenticate,
@@ -39,7 +37,6 @@ router.delete(
   PostController.deletePost
 );
 
-// Admin routes
 router.get(
   "/flagged/all",
   authenticate,

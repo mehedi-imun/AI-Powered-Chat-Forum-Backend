@@ -9,7 +9,6 @@ export const validateRequest =
   (zodSchema: ZodObject<ZodRawShape>) =>
   async (req: Request, _res: Response, next: NextFunction) => {
     try {
-      // If body.data exists (sent as JSON string), parse it
       if (req.body?.data) {
         try {
           req.body = JSON.parse(req.body.data);
@@ -26,20 +25,15 @@ export const validateRequest =
         }
       }
 
-      // Prepare validation data - wrap in appropriate structure
       const validationData = {
         body: req.body,
         query: req.query,
         params: req.params,
       };
 
-      // Validate asynchronously
       const validated = await zodSchema.parseAsync(validationData);
 
-      // Update request with validated data
       req.body = validated.body;
-      // Note: req.query is read-only, so we can't reassign it
-      // The validated query is already in req.query from Express parsing
       if (validated.params) req.params = validated.params as any;
 
       next();

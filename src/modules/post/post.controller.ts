@@ -3,7 +3,6 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { PostService } from "./post.service";
 
-// Create post
 const createPost = catchAsync(async (req, res) => {
   const userId = req.user?.userId;
   const post = await PostService.createPost(req.body, userId!);
@@ -16,7 +15,6 @@ const createPost = catchAsync(async (req, res) => {
   });
 });
 
-// Get posts by thread
 const getPostsByThread = catchAsync(async (req, res) => {
   const { threadId } = req.params;
   const { page, limit } = req.query;
@@ -34,7 +32,6 @@ const getPostsByThread = catchAsync(async (req, res) => {
   });
 });
 
-// Get post by ID
 const getPostById = catchAsync(async (req, res) => {
   const post = await PostService.getPostById(req.params.id);
 
@@ -46,7 +43,6 @@ const getPostById = catchAsync(async (req, res) => {
   });
 });
 
-// Update post
 const updatePost = catchAsync(async (req, res) => {
   const userId = req.user?.userId;
   const post = await PostService.updatePost(req.params.id, req.body, userId!);
@@ -59,7 +55,6 @@ const updatePost = catchAsync(async (req, res) => {
   });
 });
 
-// Delete post
 const deletePost = catchAsync(async (req, res) => {
   const userId = req.user?.userId;
   await PostService.deletePost(req.params.id, userId!);
@@ -72,7 +67,6 @@ const deletePost = catchAsync(async (req, res) => {
   });
 });
 
-// Get posts by user
 const getPostsByUser = catchAsync(async (req, res) => {
   const { userId } = req.params;
   const { page, limit } = req.query;
@@ -90,7 +84,6 @@ const getPostsByUser = catchAsync(async (req, res) => {
   });
 });
 
-// Get flagged posts (admin only)
 const getFlaggedPosts = catchAsync(async (req, res) => {
   const { page, limit } = req.query;
   const result = await PostService.getFlaggedPosts(

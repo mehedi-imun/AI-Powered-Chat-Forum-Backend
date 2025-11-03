@@ -35,7 +35,6 @@ export const authenticate = async (
   }
 };
 
-// Optional authentication (for routes that work with or without auth)
 export const authenticateOptional = async (
   req: AuthRequest,
   res: Response,
@@ -54,7 +53,6 @@ export const authenticateOptional = async (
     }
     next();
   } catch (error) {
-    // Ignore auth errors for optional auth
     next();
   }
 };

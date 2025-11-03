@@ -6,7 +6,6 @@ import { AuthValidation } from "./auth.validation";
 
 const router = Router();
 
-// Public routes
 router.post(
   "/register",
   validateRequest(AuthValidation.registerSchema),
@@ -39,7 +38,6 @@ router.post(
 
 router.get("/verify-email/:token", AuthController.verifyEmail);
 
-// Protected routes (require authentication)
 router.post(
   "/change-password",
   authenticate,

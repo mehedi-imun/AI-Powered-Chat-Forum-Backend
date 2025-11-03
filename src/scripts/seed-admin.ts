@@ -2,18 +2,11 @@ import mongoose from "mongoose";
 import { User } from "../modules/user/user.model";
 import env from "../config/env";
 
-/**
- * Seed Super Admin User
- * Run: npm run seed:admin
- */
-
 const seedAdmin = async () => {
   try {
-    // Connect to MongoDB
     await mongoose.connect(env.DATABASE_URL);
     console.log("✅ Connected to MongoDB");
 
-    // Check if admin already exists
     const existingAdmin = await User.findOne({
       email: "admin@chatforum.com",
     });
@@ -27,11 +20,10 @@ const seedAdmin = async () => {
       return;
     }
 
-    // Create Super Admin
     const admin = await User.create({
       name: "Super Admin",
       email: "admin@chatforum.com",
-      password: "Admin@1234", // Will be hashed by pre-save hook
+      password: "Admin@1234",
       role: "Admin",
       emailVerified: true,
       bio: "Super Administrator - Full system access",
@@ -56,5 +48,4 @@ const seedAdmin = async () => {
   }
 };
 
-// Run the seed function
 seedAdmin();

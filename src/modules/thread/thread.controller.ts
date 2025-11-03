@@ -3,7 +3,6 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { ThreadService } from "./thread.service";
 
-// Create thread
 const createThread = catchAsync(async (req, res) => {
   const userId = req.user?.userId;
   const thread = await ThreadService.createThread(req.body, userId!);
@@ -16,7 +15,6 @@ const createThread = catchAsync(async (req, res) => {
   });
 });
 
-// Get all threads
 const getAllThreads = catchAsync(async (req, res) => {
   const result = await ThreadService.getAllThreads(req.query);
 
@@ -28,7 +26,6 @@ const getAllThreads = catchAsync(async (req, res) => {
   });
 });
 
-// Get thread by ID
 const getThreadById = catchAsync(async (req, res) => {
   const thread = await ThreadService.getThreadById(req.params.id);
 
@@ -40,7 +37,6 @@ const getThreadById = catchAsync(async (req, res) => {
   });
 });
 
-// Get thread by slug
 const getThreadBySlug = catchAsync(async (req, res) => {
   const thread = await ThreadService.getThreadBySlug(req.params.slug);
 
@@ -52,7 +48,6 @@ const getThreadBySlug = catchAsync(async (req, res) => {
   });
 });
 
-// Update thread
 const updateThread = catchAsync(async (req, res) => {
   const userId = req.user?.userId;
   const thread = await ThreadService.updateThread(
@@ -69,7 +64,6 @@ const updateThread = catchAsync(async (req, res) => {
   });
 });
 
-// Delete thread
 const deleteThread = catchAsync(async (req, res) => {
   const userId = req.user?.userId;
   await ThreadService.deleteThread(req.params.id, userId!);
@@ -99,7 +93,6 @@ const searchThreads = catchAsync(async (req, res) => {
   });
 });
 
-// Get threads by user
 const getThreadsByUser = catchAsync(async (req, res) => {
   const { userId } = req.params;
   const { page, limit } = req.query;
@@ -130,7 +123,6 @@ const requestThreadSummary = catchAsync(async (req, res) => {
   });
 });
 
-// Get thread summary
 const getThreadSummary = catchAsync(async (req, res) => {
   const { id } = req.params;
   const summary = await ThreadService.getThreadSummary(id);

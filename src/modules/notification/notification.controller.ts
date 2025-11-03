@@ -4,7 +4,6 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { NotificationService } from "./notification.service";
 
-// Get user notifications
 const getUserNotifications = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const query = req.query;
@@ -19,7 +18,6 @@ const getUserNotifications = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// Get single notification
 const getNotificationById = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const { id } = req.params;
@@ -63,7 +61,6 @@ const markAllAsRead = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// Delete notification
 const deleteNotification = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const { id } = req.params;
@@ -78,7 +75,6 @@ const deleteNotification = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// Delete all read notifications
 const deleteAllRead = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   
@@ -92,7 +88,6 @@ const deleteAllRead = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// Get unread count
 const getUnreadCount = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   

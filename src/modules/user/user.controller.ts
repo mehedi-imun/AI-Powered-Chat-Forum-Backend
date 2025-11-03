@@ -3,7 +3,6 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { UserService } from "./user.service";
 
-// Get all users
 const getAllUsers = catchAsync(async (req, res) => {
   const result = await UserService.getAllUsers(req.query);
 
@@ -15,7 +14,6 @@ const getAllUsers = catchAsync(async (req, res) => {
   });
 });
 
-// Get single user
 const getUserById = catchAsync(async (req, res) => {
   const user = await UserService.getUserById(req.params.id);
 
@@ -27,7 +25,6 @@ const getUserById = catchAsync(async (req, res) => {
   });
 });
 
-// Update user profile
 const updateUser = catchAsync(async (req, res) => {
   const userId = req.user?.userId;
   const user = await UserService.updateUser(userId!, req.body);
@@ -40,7 +37,6 @@ const updateUser = catchAsync(async (req, res) => {
   });
 });
 
-// Delete user (admin only)
 const deleteUser = catchAsync(async (req, res) => {
   await UserService.deleteUser(req.params.id);
 
