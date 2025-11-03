@@ -1,0 +1,125 @@
+import mongoose, { Schema, model } from "mongoose";
+import { IThread } from "./thread.interface";
+
+const threadSchema = new Schema<IThread>(
+  {
+    title: {
+      type: String,
+      required: [true, "Thread title is required"],
+      trim: true,
+      minlength: [3, "Title must be at least 3 characters"],
+      maxlength: [200, "Title cannot exceed 200 characters"],
+    },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [500, "Description cannot exceed 500 characters"],
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "Thread creator is required"],
+      index: true,
+    },
+    organizationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true,
+    },
+    tags: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function (tags: string[]) {
+          return tags.length <= 10;
+        },
+        message: "Cannot have more than 10 tags",
+      },
+    },
+    viewCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    postCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    lastActivityAt: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
+    isPinned: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    isLocked: {
+      type: Boolean,
+      default: false,
+    },
+    status: {
+      type: String,
+      enum: ["active", "archived", "deleted"],
+      default: "active",
+      index: true,
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+// Indexes for performance
+threadSchema.index({ title: "text", description: "text" }); // Full-text search
+threadSchema.index({ createdBy: 1, status: 1 });
+threadSchema.index({ tags: 1, status: 1 });
+threadSchema.index({ lastActivityAt: -1 });
+threadSchema.index({ createdAt: -1 });
+
+// Virtual for posts (if needed)
+threadSchema.virtual("posts", {
+  ref: "Post",
+  localField: "_id",
+  foreignField: "threadId",
+});
+
+// Helper method to generate slug from title
+threadSchema.statics.generateSlug = function (title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+};
+
+// Pre-save hook to generate slug
+threadSchema.pre("save", async function (next) {
+  if (this.isNew || this.isModified("title")) {
+    let slug = (this.constructor as any).generateSlug(this.title);
+    let uniqueSlug = slug;
+    let counter = 1;
+
+    // Ensure slug is unique
+    while (await mongoose.model("Thread").findOne({ slug: uniqueSlug })) {
+      uniqueSlug = `${slug}-${counter}`;
+      counter++;
+    }
+
+    this.slug = uniqueSlug;
+  }
+  next();
+});
+
+export const Thread = model<IThread>("Thread", threadSchema);
