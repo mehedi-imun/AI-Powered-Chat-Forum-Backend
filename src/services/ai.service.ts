@@ -13,6 +13,8 @@ const callOpenRouter = async (
   }
 
   try {
+    console.log("🔄 Calling OpenRouter API with model:", env.OPENROUTER_MODEL);
+    
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -29,13 +31,23 @@ const callOpenRouter = async (
       })
     });
 
+    console.log("📡 OpenRouter response status:", response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("❌ OpenRouter API error response:", errorText);
       throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    return data.choices[0]?.message?.content || "";
+    console.log("📥 OpenRouter data received, choices:", data.choices?.length || 0);
+    
+    const content = data.choices[0]?.message?.content || "";
+    if (!content) {
+      console.error("⚠️ Empty response from OpenRouter");
+    }
+    
+    return content;
   } catch (error: any) {
     console.error("❌ OpenRouter API request failed:", error.message);
     throw error;
@@ -110,7 +122,17 @@ Respond in JSON format:
       300
     );
 
-    const result = JSON.parse(responseText);
+    console.log("🤖 OpenRouter response:", responseText.substring(0, 200));
+
+    // Try to extract JSON from response (sometimes wrapped in markdown)
+    let jsonText = responseText.trim();
+    if (jsonText.includes("```json")) {
+      jsonText = jsonText.split("```json")[1].split("```")[0].trim();
+    } else if (jsonText.includes("```")) {
+      jsonText = jsonText.split("```")[1].split("```")[0].trim();
+    }
+
+    const result = JSON.parse(jsonText);
 
     return {
       isSpam: result.spamScore > 0.3,
@@ -180,7 +202,17 @@ Respond in JSON format:
       500
     );
 
-    const result = JSON.parse(responseText);
+    console.log("🤖 OpenRouter summary response:", responseText.substring(0, 200));
+
+    // Try to extract JSON from response (sometimes wrapped in markdown)
+    let jsonText = responseText.trim();
+    if (jsonText.includes("```json")) {
+      jsonText = jsonText.split("```json")[1].split("```")[0].trim();
+    } else if (jsonText.includes("```")) {
+      jsonText = jsonText.split("```")[1].split("```")[0].trim();
+    }
+
+    const result = JSON.parse(jsonText);
 
     return {
       summary: result.summary,
