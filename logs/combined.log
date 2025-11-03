@@ -22,3 +22,11 @@
 {"level":"info","message":"🚀 Server is running on port 5000","timestamp":"2025-11-03 17:11:41"}
 {"level":"info","message":"📝 Environment: development","timestamp":"2025-11-03 17:11:41"}
 {"level":"info","message":"🌐 API URL: http://localhost:5000","timestamp":"2025-11-03 17:11:41"}
+{"level":"info","message":"\nSIGTERM signal received: closing HTTP server","timestamp":"2025-11-03 17:12:09"}
+{"level":"info","message":"HTTP server closed","timestamp":"2025-11-03 17:12:09"}
+{"level":"info","message":"MongoDB connection closed","timestamp":"2025-11-03 17:12:09"}
+{"level":"info","message":"✅ MongoDB connected successfully","timestamp":"2025-11-03 17:12:10"}
+{"error":{"code":"ECONNREFUSED"},"level":"warn","message":"⚠️  RabbitMQ connection failed, continuing without queue","timestamp":"2025-11-03 17:12:10"}
+{"level":"info","message":"🚀 Server is running on port 5000","timestamp":"2025-11-03 17:12:10"}
+{"level":"info","message":"📝 Environment: development","timestamp":"2025-11-03 17:12:10"}
+{"level":"info","message":"🌐 API URL: http://localhost:5000","timestamp":"2025-11-03 17:12:10"}
