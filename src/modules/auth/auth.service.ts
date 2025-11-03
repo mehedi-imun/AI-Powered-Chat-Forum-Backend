@@ -7,9 +7,10 @@ import {
   hashResetToken,
   verifyRefreshToken,
 } from "../../utils/jwt";
-// import { User } from "../user/user.model";
 import { ILoginResponse, IRefreshTokenResponse } from "./auth.interface";
 import { User } from "../user/user.model";
+import { emailService } from "../../services/email.service";
+import env from "../../config/env";
 
 // Login user
 const login = async (
@@ -106,14 +107,18 @@ const register = async (
     email,
     password,
     role: "Member",
-    emailVerified: false,
+    emailVerified: true, // Auto-verify for now (change to false when email verification is ready)
   });
 
-  // TODO: Send verification email in Phase 2
-  // await emailService.sendVerificationEmail(user.email, verificationToken);
+  // Send welcome email (async, non-blocking)
+  emailService.sendEmailVerification(
+    user.email,
+    user.name,
+    `${env.FRONTEND_URL}/verify-email?token=dummy-token`
+  ).catch(err => console.error('Failed to send welcome email:', err));
 
   return {
-    message: "Registration successful. Please check your email to verify your account.",
+    message: "Registration successful! Welcome to Chat Forum.",
   };
 };
 
@@ -131,8 +136,9 @@ const forgotPassword = async (email: string): Promise<{ message: string }> => {
   user.passwordResetExpires = new Date(Date.now() + 3600000);
   await user.save();
 
-  // TODO: Send reset email in Phase 2
-  // await emailService.sendPasswordResetEmail(user.email, resetToken);
+  // Send password reset email (async, non-blocking)
+  emailService.sendPasswordResetEmail(user.email, resetToken, user.name)
+    .catch(err => console.error('Failed to send password reset email:', err));
 
   return {
     message: "If a user with that email exists, a password reset link has been sent.",

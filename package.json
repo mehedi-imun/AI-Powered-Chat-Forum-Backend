@@ -10,9 +10,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "db:reset": "ts-node src/scripts/resetDatabase.ts",
-    "seed:admin": "ts-node src/scripts/seedAdmin.ts",
-    "db:fresh": "npm run db:reset && npm run seed:admin"
+    "seed:admin": "ts-node src/scripts/seed-admin.ts"
   },
   "keywords": [],
   "author": "",

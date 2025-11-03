@@ -23,8 +23,9 @@ class EmailService {
     try {
       await this.transporter.verify();
       console.log("✅ Email service ready");
-    } catch (error) {
-      console.error("❌ Email service connection failed:", error);
+    } catch (error: any) {
+      console.warn("⚠️  Email service unavailable (check SMTP credentials)");
+      console.error("Email error:", error?.message || error);
     }
   }
 
