@@ -1,5 +1,5 @@
 import { getRabbitMQChannel, QUEUES } from "../config/rabbitmq";
-import type { Channel, ConsumeMessage } from "amqplib";
+import * as amqp from "amqplib";
 
 export interface QueueMessage<T = any> {
   data: T;
@@ -8,7 +8,7 @@ export interface QueueMessage<T = any> {
 }
 
 export class QueueService {
-  private channel: Channel | null = null;
+  private channel: amqp.Channel | null = null;
 
   constructor() {
     this.channel = getRabbitMQChannel();
@@ -66,7 +66,7 @@ export class QueueService {
    */
   async consumeQueue<T>(
     queueName: string,
-    handler: (data: T, message: ConsumeMessage) => Promise<void>,
+    handler: (data: T, message: amqp.ConsumeMessage) => Promise<void>,
     options?: {
       prefetch?: number;
     }
@@ -87,7 +87,7 @@ export class QueueService {
 
       await this.channel.consume(
         queueName,
-        async (msg) => {
+        async (msg: amqp.ConsumeMessage | null) => {
           if (!msg) return;
 
           try {
@@ -133,14 +133,14 @@ export class QueueService {
   /**
    * Acknowledge a message manually
    */
-  ackMessage(message: ConsumeMessage): void {
+  ackMessage(message: amqp.ConsumeMessage): void {
     this.channel?.ack(message);
   }
 
   /**
    * Reject a message (optionally requeue)
    */
-  nackMessage(message: ConsumeMessage, requeue = false): void {
+  nackMessage(message: amqp.ConsumeMessage, requeue = false): void {
     this.channel?.nack(message, false, requeue);
   }
 

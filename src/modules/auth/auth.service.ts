@@ -169,216 +169,25 @@ const logout = async (): Promise<void> => {
 
 // Self-service registration - create organization + owner in one transaction
 // Public users register and become Organization Owners with 14-day free trial
+// TODO: Implement in Phase 2 when organization module is created
 const register = async (data: {
   name: string;
   email: string;
   password: string;
   organizationName: string;
   organizationSlug: string;
-}) => {
-  const { Organization } = await import("../organization/organization.model");
-
-  // Check if user already exists
-  const existingUser = await User.findOne({ email: data.email });
-  if (existingUser) {
-    // If user exists but email is not verified, allow re-registration
-    if (!existingUser.emailVerified && existingUser.status === "pending") {
-      // Generate new verification token
-      const crypto = require("crypto");
-      const verificationToken = crypto.randomBytes(32).toString("hex");
-      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-      // Update user with new token and updated info
-      existingUser.name = data.name;
-      existingUser.password = data.password; // Will be hashed by pre-save hook
-      existingUser.emailVerificationToken = verificationToken;
-      existingUser.emailVerificationExpires = verificationExpires;
-      await existingUser.save();
-
-      // Get the organization
-      const organization = await Organization.findById(
-        existingUser.organizationId
-      );
-      if (organization) {
-        // Update organization details if changed
-        organization.name = data.organizationName;
-        organization.ownerName = data.name;
-        await organization.save();
-      }
-
-      // Resend verification email
-      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-      await emailService.sendEmailVerification(
-        existingUser.email,
-        existingUser.name,
-        verificationUrl
-      );
-
-      return {
-        user: {
-          ...existingUser.toObject(),
-          message:
-            "Verification email resent. Please check your email to verify your account",
-        },
-        organization,
-        accessToken: null,
-        refreshToken: null,
-      };
-    }
-
-    // If user exists and is verified, throw error
-    throw new AppError(httpStatus.BAD_REQUEST, "Email already in use");
-  }
-
-  // Check if organization slug is available
-  const slugAvailable = await Organization.checkSlugAvailability(
-    data.organizationSlug
-  );
-  if (!slugAvailable) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Organization slug already taken"
-    );
-  }
-
-  // Create organization with 14-day free trial
-  const organization = await Organization.create({
-    name: data.organizationName,
-    slug: data.organizationSlug,
-    plan: "free",
-    subscriptionStatus: "trialing",
-    trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
-    status: "active",
-    usage: {
-      users: 1, // Owner will be the first user
-      teams: 0,
-      storage: "0MB",
-    },
-  });
-
-  // Create owner user account
-  // NEW ROLE SYSTEM: Direct role assignment
-  // Generate email verification token
-  const crypto = require("crypto");
-  const verificationToken = crypto.randomBytes(32).toString("hex");
-  const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-  const owner = await User.create({
-    name: data.name,
-    email: data.email,
-    password: data.password,
-    organizationId: organization._id!.toString(),
-    role: "OrgOwner", // Direct role: Organization Owner
-    isActive: false, // Not active until email verified
-    status: "pending", // Pending until email verified
-    emailVerified: false,
-    emailVerificationToken: verificationToken,
-    emailVerificationExpires: verificationExpires,
-    mustChangePassword: false, // They set their own password during signup
-  });
-
-  // Update organization with ownerId
-  organization.ownerId = owner._id!.toString();
-  organization.ownerEmail = owner.email;
-  organization.ownerName = owner.name;
-  await organization.save();
-
-  // Send email verification link
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-
-  await emailService.sendEmailVerification(
-    owner.email,
-    owner.name,
-    verificationUrl
-  );
-
-  // Note: Don't generate tokens yet - user needs to verify email first
-  // They will get tokens after email verification
-
-  return {
-    user: {
-      ...owner.toObject(),
-      message: "Please check your email to verify your account",
-    },
-    organization,
-    accessToken: null, // No token until email verified
-    refreshToken: null, // No token until email verified
-  };
+}): Promise<any> => {
+  throw new AppError(httpStatus.NOT_IMPLEMENTED, "Organization registration will be implemented in Phase 2");
 };
 
 // Setup organization (for admin-created organizations)
+// TODO: Implement in Phase 2 when organization module is created
 const setupOrganization = async (data: {
   token: string;
   name: string;
   password: string;
-}) => {
-  const { Organization } = await import("../organization/organization.model");
-  const crypto = await import("crypto");
-
-  // Hash the token for comparison
-  const hashedToken = crypto
-    .createHash("sha256")
-    .update(data.token)
-    .digest("hex");
-
-  // Find organization with valid setup token
-  const organization = await Organization.findOne({
-    setupToken: hashedToken,
-    setupTokenExpires: { $gt: new Date() },
-    status: "pending_setup",
-  });
-
-  if (!organization) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Invalid or expired setup token"
-    );
-  }
-
-  // Check if user already exists
-  const existingUser = await User.findOne({ email: organization.ownerEmail });
-  if (existingUser) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "User already exists with this email"
-    );
-  }
-
-  // Create owner account
-  const owner = await User.create({
-    name: data.name,
-    email: organization.ownerEmail!,
-    password: data.password,
-    organizationId: organization._id!.toString(),
-    role: "OrgOwner", // Organization Owner role
-    isActive: true,
-    status: "active", // Owner is active from setup
-  });
-
-  // Update organization
-  organization.ownerId = owner._id!.toString();
-  organization.status = "active";
-  organization.setupToken = undefined;
-  organization.setupTokenExpires = undefined;
-  organization.usage.users = 1;
-  await organization.save();
-
-  // Generate tokens
-  const tokenPayload = {
-    userId: owner._id!.toString(),
-    email: owner.email,
-    role: owner.role,
-  };
-
-  const accessToken = generateAccessToken(tokenPayload);
-  const refreshToken = generateRefreshToken(tokenPayload);
-
-  return {
-    user: owner,
-    organization,
-    accessToken,
-    refreshToken,
-  };
+}): Promise<any> => {
+  throw new AppError(httpStatus.NOT_IMPLEMENTED, "Organization setup will be implemented in Phase 2");
 };
 
 // Change password (for logged-in users)

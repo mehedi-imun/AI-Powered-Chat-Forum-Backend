@@ -1,4 +1,4 @@
-import cron from "node-cron";
+import * as cron from "node-cron";
 
 // Store cron jobs
 const jobs: Map<string, cron.ScheduledTask> = new Map();

@@ -1,7 +1,7 @@
 import httpStatus from "http-status";
 import { Types } from "mongoose";
 import AppError from "../../errors/AppError";
-import { emailService } from "../../services/email.service";
+// import { emailService } from "../../services/email.service"; // TODO: Will use in Phase 2
 import QueryBuilder from "../../utils/queryBuilder";
 import {
   IUser,
@@ -75,8 +75,8 @@ const createUser = async (
 
   const user = await User.create(userData);
 
-  // Send welcome email
-  await emailService.sendWelcomeEmail(user.email, user.name, user.role);
+  // Send welcome email (commented out - will implement welcome email later)
+  // await emailService.sendWelcomeEmail(user.email, user.name, user.role);
 
   return user;
 };
