@@ -1,4 +1,5 @@
-import { queueService } from "../config/rabbitmq";
+import { queueService } from "../services/queue.service";
+import { QUEUES } from "../config/rabbitmq";
 import { AIService } from "../services/ai.service";
 import { Post } from "../modules/post/post.model";
 import { Thread } from "../modules/thread/thread.model";
@@ -13,9 +14,12 @@ export const startAISummaryWorker = async (): Promise<void> => {
   console.log("📝 Starting AI Summary Worker...");
 
   await queueService.consumeQueue(
-    "ai-summary",
+    QUEUES.AI_SUMMARY,
     async (message: any) => {
       try {
+        console.log('📦 Raw summary message:', JSON.stringify(message, null, 2));
+        
+        // Extract from message (consumeQueue already unwraps .data)
         const { threadId } = message;
 
         console.log(`📊 Generating summary for thread: ${threadId}`);

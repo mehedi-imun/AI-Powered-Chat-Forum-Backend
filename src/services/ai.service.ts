@@ -1,10 +1,46 @@
-import OpenAI from "openai";
 import env from "../config/env";
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: env.OPENAI_API_KEY || "dummy-key-for-testing",
-});
+/**
+ * Make a request to OpenRouter API
+ */
+const callOpenRouter = async (
+  messages: Array<{ role: string; content: string }>,
+  temperature = 0.5,
+  maxTokens = 500
+): Promise<string> => {
+  if (!env.OPENROUTER_API_KEY) {
+    throw new Error("OpenRouter API key not configured");
+  }
+
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.OPENROUTER_API_KEY}`,
+        "HTTP-Referer": env.SITE_URL || "http://localhost:3000",
+        "X-Title": env.SITE_NAME || "Chat Forum",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: env.OPENROUTER_MODEL || "minimax/minimax-m2:free",
+        messages: messages,
+        temperature: temperature,
+        max_tokens: maxTokens
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || "";
+  } catch (error: any) {
+    console.error("❌ OpenRouter API request failed:", error.message);
+    throw error;
+  }
+};
 
 // AI Service Interface
 export interface IModerationResult {
@@ -34,8 +70,8 @@ export const moderateContent = async (
 ): Promise<IModerationResult> => {
   try {
     // Skip if no API key (for testing)
-    if (!env.OPENAI_API_KEY || env.OPENAI_API_KEY === "dummy-key-for-testing") {
-      console.warn("⚠️  OpenAI API key not configured, using mock moderation");
+    if (!env.OPENROUTER_API_KEY) {
+      console.warn("⚠️  OpenRouter API key not configured, using mock moderation");
       return mockModeration(content);
     }
 
@@ -62,21 +98,18 @@ Respond in JSON format:
   "reasoning": "explanation here"
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: env.AI_MODEL || "gpt-3.5-turbo",
-      messages: [
+    const responseText = await callOpenRouter(
+      [
         {
           role: "system",
-          content:
-            "You are a content moderation AI. Analyze text and provide moderation scores in JSON format.",
+          content: "You are a content moderation AI. Analyze text and provide moderation scores in JSON format.",
         },
         { role: "user", content: prompt },
       ],
-      temperature: 0.3,
-      max_tokens: 300,
-    });
+      0.3,
+      300
+    );
 
-    const responseText = completion.choices[0]?.message?.content || "{}";
     const result = JSON.parse(responseText);
 
     return {
@@ -105,8 +138,8 @@ export const generateThreadSummary = async (
 ): Promise<ISummaryResult> => {
   try {
     // Skip if no API key (for testing)
-    if (!env.OPENAI_API_KEY || env.OPENAI_API_KEY === "dummy-key-for-testing") {
-      console.warn("⚠️  OpenAI API key not configured, using mock summary");
+    if (!env.OPENROUTER_API_KEY) {
+      console.warn("⚠️  OpenRouter API key not configured, using mock summary");
       return mockSummary(posts);
     }
 
@@ -135,21 +168,18 @@ Respond in JSON format:
   "sentimentScore": 0.0
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: env.AI_MODEL || "gpt-3.5-turbo",
-      messages: [
+    const responseText = await callOpenRouter(
+      [
         {
           role: "system",
-          content:
-            "You are a helpful assistant that summarizes discussion threads. Provide clear, concise summaries in JSON format.",
+          content: "You are a helpful assistant that summarizes discussion threads. Provide clear, concise summaries in JSON format.",
         },
         { role: "user", content: prompt },
       ],
-      temperature: 0.5,
-      max_tokens: 500,
-    });
+      0.5,
+      500
+    );
 
-    const responseText = completion.choices[0]?.message?.content || "{}";
     const result = JSON.parse(responseText);
 
     return {
@@ -169,6 +199,20 @@ Respond in JSON format:
  * Mock moderation for testing/fallback
  */
 const mockModeration = (content: string): IModerationResult => {
+  if (!content) {
+    console.error("❌ Mock moderation received undefined content");
+    return {
+      isSpam: false,
+      isToxic: false,
+      isInappropriate: false,
+      spamScore: 0,
+      toxicityScore: 0,
+      inappropriateScore: 0,
+      recommendation: "approve",
+      reasoning: "Error: Content is undefined",
+    };
+  }
+  
   const lowerContent = content.toLowerCase();
 
   // Simple keyword-based detection

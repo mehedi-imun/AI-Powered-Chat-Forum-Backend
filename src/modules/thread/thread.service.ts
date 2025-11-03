@@ -374,11 +374,11 @@ const requestThreadSummary = async (threadId: string): Promise<void> => {
     throw new AppError(httpStatus.NOT_FOUND, "Thread not found");
   }
 
-  // Import queueService dynamically to avoid circular dependencies
-  const { queueService } = await import("../../config/rabbitmq");
+  // Import queue service dynamically to avoid circular dependencies
+  const { publishAISummary } = await import("../../services/queue.service");
   
   // Enqueue AI summary job
-  await queueService.publishToQueue("ai-summary", {
+  await publishAISummary({
     threadId: threadId.toString(),
   });
 };

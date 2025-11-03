@@ -1,4 +1,5 @@
-import { queueService } from "../config/rabbitmq";
+import { queueService } from "../services/queue.service";
+import { QUEUES } from "../config/rabbitmq";
 import { AIService } from "../services/ai.service";
 import { Post } from "../modules/post/post.model";
 import { User } from "../modules/user/user.model";
@@ -14,9 +15,12 @@ export const startAIModerationWorker = async (): Promise<void> => {
   console.log("🤖 Starting AI Moderation Worker...");
 
   await queueService.consumeQueue(
-    "ai-moderation",
+    QUEUES.AI_MODERATION,
     async (message: any) => {
       try {
+        console.log(`📦 Received message:`, JSON.stringify(message, null, 2));
+        
+        // Extract from message (consumeQueue already unwraps .data)
         const { postId, content, authorId } = message;
 
         console.log(`🔍 Moderating post: ${postId}`);

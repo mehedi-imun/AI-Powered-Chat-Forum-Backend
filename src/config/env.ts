@@ -35,6 +35,12 @@ interface EnvConfig {
   // AI (OpenAI)
   OPENAI_API_KEY?: string;
   AI_MODEL?: string;
+
+  // AI (OpenRouter)
+  OPENROUTER_API_KEY?: string;
+  OPENROUTER_MODEL?: string;
+  SITE_URL?: string;
+  SITE_NAME?: string;
 }
 
 // Function to load environment variables and validate their existence
@@ -92,6 +98,12 @@ const loadEnvVariables = (): EnvConfig => {
     // AI (OpenAI)
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     AI_MODEL: process.env.AI_MODEL || "gpt-3.5-turbo",
+
+    // AI (OpenRouter)
+    OPENROUTER_API_KEY: process.env.OPEN_router_API_KEY || process.env.OPENROUTER_API_KEY,
+    OPENROUTER_MODEL: process.env.OPENROUTER_MODEL || "minimax/minimax-m2:free",
+    SITE_URL: process.env.SITE_URL || process.env.FRONTEND_URL,
+    SITE_NAME: process.env.SITE_NAME || "Chat Forum",
   };
 };
 
