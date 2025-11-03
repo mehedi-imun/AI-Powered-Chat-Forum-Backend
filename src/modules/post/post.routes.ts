@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate";
 import { authorize } from "../../middleware/authorize";
-import validateRequest from "../../middleware/validateRequest";
+import { validateRequest } from "../../middleware/validateRequest";
 import { PostController } from "./post.controller";
 import {
   createPostSchema,

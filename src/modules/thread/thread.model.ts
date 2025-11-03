@@ -29,11 +29,6 @@ const threadSchema = new Schema<IThread>(
       required: [true, "Thread creator is required"],
       index: true,
     },
-    organizationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Organization",
-      index: true,
-    },
     tags: {
       type: [String],
       default: [],

@@ -4,14 +4,12 @@ import { IUser } from "./user.interface";
 
 const userSchema = new Schema<IUser>(
   {
-    organizationId: {
+    name: {
       type: String,
-      required: false, // DEPRECATED: Kept for backward compatibility
-    },
-    organizationIds: {
-      type: [String],
-      default: [], // NEW: Support multiple organizations
-      index: true,
+      required: [true, "Name is required"],
+      trim: true,
+      minlength: [2, "Name must be at least 2 characters"],
+      maxlength: [50, "Name cannot exceed 50 characters"],
     },
     email: {
       type: String,
@@ -20,49 +18,32 @@ const userSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, "Please provide a valid email"],
+      index: true,
     },
     password: {
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
-      select: false, // Don't return password by default
-    },
-    name: {
-      type: String,
-      required: [true, "Name is required"],
-      trim: true,
+      select: false,
     },
     role: {
       type: String,
-      enum: {
-        values: ["SuperAdmin", "Admin", "OrgOwner", "OrgAdmin", "OrgMember"],
-        message: "{VALUE} is not a valid role",
-      },
-      required: [true, "Role is required"],
-      default: "OrgMember",
+      enum: ["Admin", "Moderator", "Member"],
+      default: "Member",
+      index: true,
     },
-    managedTeamIds: {
-      type: [String],
-      default: [],
+    avatar: {
+      type: String,
+      default: null,
+    },
+    bio: {
+      type: String,
+      maxlength: [500, "Bio cannot exceed 500 characters"],
     },
     isActive: {
       type: Boolean,
       default: true,
-    },
-    status: {
-      type: String,
-      enum: ["active", "inactive", "pending", "suspended"],
-      default: "pending", // New users start as pending
-    },
-    lastLoginAt: {
-      type: Date,
-    },
-    firstLogin: {
-      type: Date,
-    },
-    mustChangePassword: {
-      type: Boolean,
-      default: false,
+      index: true,
     },
     emailVerified: {
       type: Boolean,
@@ -76,12 +57,6 @@ const userSchema = new Schema<IUser>(
       type: Date,
       select: false,
     },
-    invitedBy: {
-      type: String, // User ID who invited this user
-    },
-    invitedAt: {
-      type: Date,
-    },
     passwordResetToken: {
       type: String,
       select: false,
@@ -90,32 +65,25 @@ const userSchema = new Schema<IUser>(
       type: Date,
       select: false,
     },
-    setupToken: {
-      type: String,
-      select: false,
-    },
-    setupTokenExpires: {
+    lastLoginAt: {
       type: Date,
-      select: false,
     },
   },
   {
     timestamps: true,
     toJSON: {
-      virtuals: true, // Enable virtuals in JSON output
       transform: (_doc, ret) => {
-        delete (ret as any).password;
-        delete (ret as any).passwordResetToken;
-        delete (ret as any).passwordResetExpires;
-        delete (ret as any).__v;
-        return ret;
+        // Remove sensitive fields from JSON output
+        const { password, __v, ...rest } = ret;
+        return rest;
       },
-    },
-    toObject: {
-      virtuals: true, // Enable virtuals in object output
     },
   }
 );
+
+// Indexes for performance
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1, isActive: 1 });
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
@@ -140,11 +108,5 @@ userSchema.methods.comparePassword = async function (
     return false;
   }
 };
-
-// Add indexes
-userSchema.index({ organizationId: 1 }); // DEPRECATED: Kept for backward compatibility
-userSchema.index({ organizationIds: 1 }); // NEW: Multi-organization index
-userSchema.index({ email: 1, organizationIds: 1 }); // Compound index
-userSchema.index({ role: 1, organizationIds: 1 }); // Role-based queries
 
 export const User = model<IUser>("User", userSchema);

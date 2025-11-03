@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate";
-import validateRequest from "../../middleware/validateRequest";
+import { validateRequest } from "../../middleware/validateRequest";
 import { ThreadController } from "./thread.controller";
 import {
   createThreadSchema,

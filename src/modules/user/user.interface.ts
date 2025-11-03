@@ -1,65 +1,35 @@
+import { Types } from "mongoose";
+
 export interface IUser {
-  _id?: string;
-  organizationId?: string; // DEPRECATED: Use organizationIds instead. Kept for backward compatibility
-  organizationIds?: string[]; // NEW: Support multiple organizations per user
+  _id?: Types.ObjectId;
+  name: string;
   email: string;
   password: string;
-  name: string;
-
-  // NEW: Simplified Single Role Field
-  // 5 clear roles that cover all use cases
-  role: "SuperAdmin" | "Admin" | "OrgOwner" | "OrgAdmin" | "OrgMember";
-
-  // Team Management (for managers)
-  managedTeamIds?: string[]; // Array of team IDs this user manages
-
-  // Status
+  role: "Admin" | "Moderator" | "Member";
+  avatar?: string;
+  bio?: string;
   isActive: boolean;
-  status: "active" | "suspended" | "inactive" | "pending"; // Real field with default "pending"
-
-  // First Login & Password Management
-  mustChangePassword?: boolean; // Force password change on first login
-  firstLogin?: Date; // Track first login timestamp
-  invitedBy?: string; // User ID who invited this user
-  invitedAt?: Date; // When they were invited
-
-  // Email Verification
-  emailVerified?: boolean; // Whether email is verified
-  emailVerificationToken?: string; // Token for email verification
-  emailVerificationExpires?: Date; // Expiry time for verification token
-
-  // Password Reset
+  emailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
-
-  // Account Setup (for invited users)
-  setupToken?: string;
-  setupTokenExpires?: Date;
-
-  // Timestamps
+  lastLoginAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
-  lastLoginAt?: Date; // Track last login time
 }
 
 export type IUserWithoutPassword = Omit<IUser, "password">;
 
-export interface IUserLogin {
-  email: string;
-  password: string;
-}
-
 export interface IUserCreate {
+  name: string;
   email: string;
   password: string;
-  name: string;
-  role: "SuperAdmin" | "Admin" | "OrgOwner" | "OrgAdmin" | "OrgMember";
-  organizationId?: string; // Optional for Platform Admins
+  role?: "Admin" | "Moderator" | "Member";
 }
 
 export interface IUserUpdate {
   name?: string;
-  role?: "SuperAdmin" | "Admin" | "OrgOwner" | "OrgAdmin" | "OrgMember";
-  isActive?: boolean;
-  managedTeamIds?: string[];
+  avatar?: string;
+  bio?: string;
 }

@@ -16,6 +16,8 @@ import { AuthRoutes } from "./modules/auth/auth.routes";
 // import { TeamRoutes } from "./modules/team/team.routes";
 // import { TrialRoutes } from "./modules/trial/trial.routes";
 import { UserRoutes } from "./modules/user/user.routes";
+import { ThreadRoutes } from "./modules/thread/thread.routes";
+import { PostRoutes } from "./modules/post/post.routes";
 
 const app = express();
 
@@ -50,6 +52,8 @@ app.use(cookieParser());
 // API Routes
 app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/users", UserRoutes);
+app.use("/api/v1/threads", ThreadRoutes);
+app.use("/api/v1/posts", PostRoutes);
 // app.use("/api/v1/billing", BillingRoutes);
 // app.use("/api/v1/teams", TeamRoutes);
 // app.use("/api/v1/analytics", AnalyticsRoutes);
