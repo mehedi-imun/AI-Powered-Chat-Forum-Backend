@@ -13,7 +13,7 @@ class EmailService {
         user: env.SMTP_USER,
         pass: env.SMTP_PASSWORD,
       },
-    });
+    } as any);
 
     this.verifyConnection();
   }
