@@ -13,6 +13,7 @@ export interface IPost {
   aiScore?: {
     spam: number;
     toxicity: number;
+    inappropriate: number;
     sentiment?: string;
   };
   status: "active" | "deleted";

@@ -57,6 +57,11 @@ const postSchema = new Schema<IPost>(
         min: 0,
         max: 1,
       },
+      inappropriate: {
+        type: Number,
+        min: 0,
+        max: 1,
+      },
       sentiment: {
         type: String,
         enum: ["positive", "neutral", "negative"],

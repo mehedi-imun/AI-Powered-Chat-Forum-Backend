@@ -31,6 +31,10 @@ interface EnvConfig {
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: number;
   RATE_LIMIT_MAX_REQUESTS: number;
+
+  // AI (OpenAI)
+  OPENAI_API_KEY?: string;
+  AI_MODEL?: string;
 }
 
 // Function to load environment variables and validate their existence
@@ -84,6 +88,10 @@ const loadEnvVariables = (): EnvConfig => {
     RATE_LIMIT_MAX_REQUESTS: parseInt(
       process.env.RATE_LIMIT_MAX_REQUESTS || "100"
     ),
+
+    // AI (OpenAI)
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    AI_MODEL: process.env.AI_MODEL || "gpt-3.5-turbo",
   };
 };
 

@@ -49,6 +49,39 @@ export const initializeCronJobs = (): void => {
   });
   jobs.set("healthCheck", healthCheckJob);
 
+  // Unban expired bans (runs every hour)
+  const unbanExpiredJob = cron.schedule("0 * * * *", async () => {
+    console.log("🔓 Checking for expired bans");
+    try {
+      const { Ban } = await import("../modules/admin/admin.model");
+      const { User } = await import("../modules/user/user.model");
+      
+      const now = new Date();
+      const expiredBans = await Ban.find({
+        isActive: true,
+        expiresAt: { $lte: now },
+      });
+
+      for (const ban of expiredBans) {
+        // Deactivate ban
+        ban.isActive = false;
+        await ban.save();
+
+        // Reactivate user
+        await User.findByIdAndUpdate(ban.userId, { isActive: true });
+        
+        console.log(`✅ Unbanned user: ${ban.userId}`);
+      }
+
+      if (expiredBans.length > 0) {
+        console.log(`✅ Processed ${expiredBans.length} expired bans`);
+      }
+    } catch (error) {
+      console.error("❌ Error processing expired bans:", error);
+    }
+  });
+  jobs.set("unbanExpired", unbanExpiredJob);
+
   console.log(`✅ ${jobs.size} cron jobs initialized`);
 };
 

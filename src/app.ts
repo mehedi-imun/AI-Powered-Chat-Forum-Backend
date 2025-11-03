@@ -19,6 +19,7 @@ import { NotificationRoutes } from "./modules/notification/notification.routes";
 import { ThreadRoutes } from "./modules/thread/thread.routes";
 import { PostRoutes } from "./modules/post/post.routes";
 import { UserRoutes } from "./modules/user/user.routes";
+import { AdminRoutes } from "./modules/admin/admin.routes";
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use("/api/v1/users", UserRoutes);
 app.use("/api/v1/threads", ThreadRoutes);
 app.use("/api/v1/posts", PostRoutes);
 app.use("/api/v1/notifications", NotificationRoutes);
+app.use("/api/v1/admin", AdminRoutes);
 // app.use("/api/v1/billing", BillingRoutes);
 // app.use("/api/v1/teams", TeamRoutes);
 // app.use("/api/v1/analytics", AnalyticsRoutes);
