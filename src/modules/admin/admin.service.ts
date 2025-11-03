@@ -22,9 +22,7 @@ import {
   ISystemSettings,
 } from "./admin.interface";
 
-// ==================== Dashboard ====================
 
-// Get dashboard statistics
 const getDashboardStats = async (): Promise<IDashboardStats> => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -67,9 +65,7 @@ const getDashboardStats = async (): Promise<IDashboardStats> => {
   };
 };
 
-// ==================== User Management ====================
 
-// Get all users with filters
 const getAllUsers = async (filters: IUserFilter) => {
   const {
     role,
@@ -114,7 +110,6 @@ const getAllUsers = async (filters: IUserFilter) => {
   };
 };
 
-// Update user details
 const updateUser = async (
   userId: string,
   updateData: IUserUpdate,
@@ -126,7 +121,6 @@ const updateUser = async (
     throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  // Update user
   Object.assign(user, updateData);
   await user.save();
 
@@ -171,7 +165,6 @@ const banUser = async (
   user.isActive = false;
   await user.save();
 
-  // Create ban record
   const expiresAt = banData.duration
     ? new Date(Date.now() + banData.duration * 24 * 60 * 60 * 1000)
     : undefined;
@@ -239,9 +232,7 @@ const unbanUser = async (
   return user;
 };
 
-// ==================== Content Moderation ====================
 
-// Create report
 const createReport = async (
   reportData: IReportCreate
 ): Promise<any> => {
@@ -284,7 +275,6 @@ const createReport = async (
   return report;
 };
 
-// Get all reports with filters
 const getAllReports = async (filters: IReportFilter) => {
   const {
     status,
@@ -322,7 +312,6 @@ const getAllReports = async (filters: IReportFilter) => {
   };
 };
 
-// Get single report by ID
 const getReportById = async (reportId: string): Promise<any> => {
   const report = await Report.findById(reportId)
     .populate("reportedBy", "name email avatar")
@@ -375,7 +364,6 @@ const takeReportAction = async (
     );
   }
 
-  // Update report
   report.status = action === "resolve" ? "resolved" : "dismissed";
   report.reviewedBy = new Types.ObjectId(reviewedBy);
   report.reviewNote = reviewNote;
@@ -435,7 +423,6 @@ const removeContent = async (
   }
 };
 
-// ==================== Activity Logs ====================
 
 // Log admin activity
 const logActivity = async (
@@ -444,7 +431,6 @@ const logActivity = async (
   await ActivityLog.create(logData);
 };
 
-// Get activity logs
 const getActivityLogs = async (
   adminId?: string,
   page = 1,
@@ -474,16 +460,13 @@ const getActivityLogs = async (
   };
 };
 
-// ==================== System Settings ====================
 
-// Get system settings
 const getSystemSettings = async (): Promise<any> => {
   let settings = await SystemSettings.findOne().populate(
     "updatedBy",
     "name email"
   );
 
-  // Create default settings if none exist
   if (!settings) {
     settings = await SystemSettings.create({
       updatedBy: new Types.ObjectId("000000000000000000000000"), // Placeholder
@@ -493,7 +476,6 @@ const getSystemSettings = async (): Promise<any> => {
   return settings;
 };
 
-// Update system settings
 const updateSystemSettings = async (
   updates: Partial<ISystemSettings>,
   adminId: string

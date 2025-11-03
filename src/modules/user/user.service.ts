@@ -10,7 +10,6 @@ import {
 } from "./user.interface";
 import { User } from "./user.model";
 
-// Get all users with pagination, search, filter
 const getAllUsers = async (query: any) => {
   const searchableFields = ["name", "email"];
 
@@ -35,7 +34,6 @@ const getAllUsers = async (query: any) => {
   };
 };
 
-// Get single user by ID
 const getUserById = async (id: string): Promise<IUserWithoutPassword> => {
   if (!Types.ObjectId.isValid(id)) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");
@@ -49,12 +47,10 @@ const getUserById = async (id: string): Promise<IUserWithoutPassword> => {
   return user as IUserWithoutPassword;
 };
 
-// Get user by email (with password for authentication)
 const getUserByEmail = async (email: string): Promise<IUser | null> => {
   return await User.findOne({ email }).select("+password");
 };
 
-// Create new user
 const createUser = async (userData: IUserCreate): Promise<IUserWithoutPassword> => {
   const existingUser = await User.findOne({ email: userData.email });
   if (existingUser) {
@@ -65,7 +61,6 @@ const createUser = async (userData: IUserCreate): Promise<IUserWithoutPassword> 
   return user as IUserWithoutPassword;
 };
 
-// Update user
 const updateUser = async (
   id: string,
   updateData: IUserUpdate
@@ -86,7 +81,6 @@ const updateUser = async (
   return user as IUserWithoutPassword;
 };
 
-// Delete user
 const deleteUser = async (id: string): Promise<void> => {
   if (!Types.ObjectId.isValid(id)) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");

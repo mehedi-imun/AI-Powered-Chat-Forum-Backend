@@ -10,7 +10,6 @@ import {
 } from "./notification.interface";
 import { Notification } from "./notification.model";
 
-// Create notification
 const createNotification = async (
   data: INotificationCreate
 ): Promise<INotification> => {
@@ -43,7 +42,6 @@ const createNotification = async (
   return notification;
 };
 
-// Get notifications for a user
 const getUserNotifications = async (
   userId: string,
   query: INotificationQuery
@@ -63,7 +61,6 @@ const getUserNotifications = async (
     filter.type = query.type;
   }
 
-  // Get notifications
   const notifications = await Notification.find(filter)
     .populate("relatedUserId", "name email avatar")
     .populate("relatedThreadId", "title slug")
@@ -85,7 +82,6 @@ const getUserNotifications = async (
   };
 };
 
-// Get single notification
 const getNotificationById = async (
   id: string,
   userId: string
@@ -164,7 +160,6 @@ const markAllAsRead = async (userId: string): Promise<{ modifiedCount: number }>
   return { modifiedCount: result.modifiedCount };
 };
 
-// Delete notification
 const deleteNotification = async (id: string, userId: string): Promise<void> => {
   const notification = await Notification.findOne({
     _id: id,
@@ -193,7 +188,6 @@ const deleteNotification = async (id: string, userId: string): Promise<void> => 
   }
 };
 
-// Delete all read notifications
 const deleteAllRead = async (userId: string): Promise<{ deletedCount: number }> => {
   const result = await Notification.deleteMany({
     userId: new Types.ObjectId(userId),
@@ -203,7 +197,6 @@ const deleteAllRead = async (userId: string): Promise<{ deletedCount: number }> 
   return { deletedCount: result.deletedCount };
 };
 
-// Get unread count
 const getUnreadCount = async (userId: string): Promise<number> => {
   return await Notification.countDocuments({
     userId: new Types.ObjectId(userId),

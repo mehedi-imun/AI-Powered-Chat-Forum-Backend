@@ -17,7 +17,6 @@ import {
 } from "./post.interface";
 import { Post } from "./post.model";
 
-// Create post/reply
 const createPost = async (
   data: IPostCreate,
   userId: string
@@ -51,7 +50,6 @@ const createPost = async (
     }
   }
 
-  // Create post
   const post = await Post.create({
     threadId: new Types.ObjectId(threadId),
     parentId: parentId ? new Types.ObjectId(parentId) : undefined,
@@ -78,7 +76,6 @@ const createPost = async (
       post.mentions = mentionedUsers.map((u: any) => u._id) as any;
       await post.save();
 
-      // Create in-app notifications for mentions
       for (const mentionedUser of mentionedUsers) {
         // Only notify if not mentioning themselves
         if (mentionedUser._id.toString() !== userId) {
@@ -107,7 +104,6 @@ const createPost = async (
   if (parentId) {
     const parentPost = await Post.findById(parentId);
     if (parentPost && parentPost.author.toString() !== userId) {
-      // Create in-app notification
       await NotificationService.createReplyNotification(
         parentPost.author.toString(),
         userId,
@@ -153,13 +149,11 @@ const createPost = async (
   return post;
 };
 
-// Get posts by thread (with pagination and nesting)
 const getPostsByThread = async (
   threadId: string,
   page = 1,
   limit = 20
 ): Promise<{ posts: IPostWithAuthor[]; total: number }> => {
-  // Get top-level posts (no parent)
   const posts = await Post.find({
     threadId,
     parentId: null,
@@ -193,7 +187,6 @@ const getPostsByThread = async (
   };
 };
 
-// Get replies for a specific post (recursive, but limited depth)
 const getPostReplies = async (
   postId: string,
   depth = 0,
@@ -228,7 +221,6 @@ const getPostReplies = async (
   return repliesWithNested;
 };
 
-// Get single post by ID
 const getPostById = async (id: string): Promise<IPostWithAuthor> => {
   const post = await Post.findOne({
     _id: id,
@@ -239,7 +231,6 @@ const getPostById = async (id: string): Promise<IPostWithAuthor> => {
     throw new AppError(httpStatus.NOT_FOUND, "Post not found");
   }
 
-  // Get replies
   const replies = await getPostReplies(id);
 
   return {
@@ -248,7 +239,6 @@ const getPostById = async (id: string): Promise<IPostWithAuthor> => {
   } as unknown as IPostWithAuthor;
 };
 
-// Update post
 const updatePost = async (
   id: string,
   data: IPostUpdate,
@@ -307,7 +297,6 @@ const updatePost = async (
   return post;
 };
 
-// Delete post (soft delete)
 const deletePost = async (id: string, userId: string): Promise<void> => {
   const post = await Post.findOne({
     _id: id,
@@ -367,7 +356,6 @@ const deletePostReplies = async (postId: string): Promise<void> => {
   }
 };
 
-// Get posts by user
 const getPostsByUser = async (
   userId: string,
   page = 1,
@@ -394,7 +382,6 @@ const getPostsByUser = async (
   };
 };
 
-// Get flagged posts (for admin moderation)
 const getFlaggedPosts = async (
   page = 1,
   limit = 20

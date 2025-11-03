@@ -35,7 +35,6 @@ const invalidateThreadCache = async (threadId?: string): Promise<void> => {
   }
 };
 
-// Create thread with initial post
 const createThread = async (
   data: IThreadCreate,
   userId: string
@@ -43,7 +42,6 @@ const createThread = async (
   const { title, description, tags, initialPostContent } = data;
 
   try {
-    // Create thread (without transaction for development)
     const thread = await Thread.create({
       title,
       description,
@@ -57,7 +55,6 @@ const createThread = async (
       status: "active",
     });
 
-    // Create initial post
     await Post.create({
       threadId: thread._id,
       content: initialPostContent,
@@ -91,7 +88,6 @@ const createThread = async (
   }
 };
 
-// Get all threads with pagination, search, filter
 const getAllThreads = async (
   query: IThreadQuery
 ): Promise<{ threads: IThreadWithAuthor[]; total: number; page: number; limit: number }> => {
@@ -104,7 +100,6 @@ const getAllThreads = async (
   }
 
   const searchableFields = ["title", "description"];
-  // Create a shallow copy of query to avoid modifying req.query
   const queryObj = { ...query } as any;
   const queryBuilder = new QueryBuilder(
     Thread.find({ status: { $ne: "deleted" } }).populate("createdBy", "name email role"),
@@ -142,7 +137,6 @@ const getAllThreads = async (
   return result;
 };
 
-// Get single thread by ID with metadata
 const getThreadById = async (id: string): Promise<IThreadWithAuthor> => {
   // Try cache first
   const cacheKey = `${CACHE_KEY_PREFIX}${id}`;
@@ -170,7 +164,6 @@ const getThreadById = async (id: string): Promise<IThreadWithAuthor> => {
   return thread as IThreadWithAuthor;
 };
 
-// Get thread by slug
 const getThreadBySlug = async (slug: string): Promise<IThreadWithAuthor> => {
   const cacheKey = `${CACHE_KEY_PREFIX}slug:${slug}`;
   const cached = await cacheService.getJSON(cacheKey);
@@ -197,7 +190,6 @@ const getThreadBySlug = async (slug: string): Promise<IThreadWithAuthor> => {
   return thread as IThreadWithAuthor;
 };
 
-// Update thread
 const updateThread = async (
   id: string,
   data: IThreadUpdate,
@@ -254,7 +246,6 @@ const updateThread = async (
   return updatedThread;
 };
 
-// Delete thread (soft delete)
 const deleteThread = async (id: string, userId: string): Promise<void> => {
   const thread = await Thread.findOne({
     _id: id,
@@ -323,7 +314,6 @@ const searchThreads = async (
   };
 };
 
-// Get threads by user
 const getThreadsByUser = async (
   userId: string,
   page = 1,
@@ -383,7 +373,6 @@ const requestThreadSummary = async (threadId: string): Promise<void> => {
   });
 };
 
-// Get thread summary from cache
 const getThreadSummary = async (threadId: string): Promise<any | null> => {
   // Verify thread exists
   const thread = await Thread.findById(threadId);
@@ -391,7 +380,6 @@ const getThreadSummary = async (threadId: string): Promise<any | null> => {
     throw new AppError(httpStatus.NOT_FOUND, "Thread not found");
   }
 
-  // Get summary from cache
   const cacheKey = `thread:summary:${threadId}`;
   const summary = await cacheService.getJSON(cacheKey);
 

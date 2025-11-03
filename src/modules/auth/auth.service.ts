@@ -110,7 +110,6 @@ const register = async (
     emailVerified: true, // Auto-verify for now (change to false when email verification is ready)
   });
 
-  // Send welcome email (async, non-blocking)
   emailService.sendEmailVerification(
     user.email,
     user.name,
@@ -136,7 +135,6 @@ const forgotPassword = async (email: string): Promise<{ message: string }> => {
   user.passwordResetExpires = new Date(Date.now() + 3600000);
   await user.save();
 
-  // Send password reset email (async, non-blocking)
   emailService.sendPasswordResetEmail(user.email, resetToken, user.name)
     .catch(err => console.error('Failed to send password reset email:', err));
 
