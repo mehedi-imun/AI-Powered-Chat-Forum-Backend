@@ -3,16 +3,13 @@
  */
 
 import request from 'supertest';
-import express from 'express';
 import httpStatus from 'http-status';
-import { AuthRoutes } from '../auth.routes';
-import { createTestUser, createTestAdmin, generateTestToken } from '../../../__tests__/utils/testHelpers';
+import { createTestApp } from '../../../__tests__/utils/testApp';
+import { createTestUser, generateTestToken } from '../../../__tests__/utils/testHelpers';
 import { User } from '../../user/user.model';
 
 // Create Express app for testing
-const app = express();
-app.use(express.json());
-app.use('/api/v1/auth', AuthRoutes);
+const app = createTestApp();
 
 describe('Auth API Integration Tests', () => {
   describe('POST /api/v1/auth/register', () => {
