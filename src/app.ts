@@ -13,6 +13,7 @@ import { NotificationRoutes } from "./modules/notification/notification.routes";
 import { PostRoutes } from "./modules/post/post.routes";
 import { ThreadRoutes } from "./modules/thread/thread.routes";
 import { UserRoutes } from "./modules/user/user.routes";
+import { WebhookRoutes } from "./modules/webhook/webhook.routes";
 import logger from "./utils/logger";
 
 const app = express();
@@ -121,6 +122,7 @@ app.use("/api/v1/threads", ThreadRoutes);
 app.use("/api/v1/posts", PostRoutes);
 app.use("/api/v1/notifications", NotificationRoutes);
 app.use("/api/v1/admin", AdminRoutes);
+app.use("/api/v1/webhook", WebhookRoutes);
 app.get("/health", (_req, res) => {
 	res.status(200).json({
 		success: true,

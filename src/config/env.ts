@@ -41,6 +41,9 @@ interface EnvConfig {
 	OPENROUTER_MODEL?: string;
 	SITE_URL?: string;
 	SITE_NAME?: string;
+
+	// Webhook
+	WEBHOOK_SECRET?: string;
 }
 
 // Function to load environment variables and validate their existence
@@ -107,6 +110,8 @@ const loadEnvVariables = (): EnvConfig => {
 		OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
 		SITE_URL: process.env.SITE_URL,
 		SITE_NAME: process.env.SITE_NAME,
+
+		WEBHOOK_SECRET: process.env.WEBHOOK_SECRET,
 	};
 };
 

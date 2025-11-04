@@ -9,6 +9,7 @@ import { initializeCronJobs, stopAllCronJobs } from "./services/cron.service";
 import logger from "./utils/logger";
 import { startAIModerationWorker } from "./workers/ai-moderation.worker";
 import { startAISummaryWorker } from "./workers/ai-summary.worker";
+import { startWebhookWorker } from "./workers/webhook.worker";
 
 let server: Server | null = null;
 
