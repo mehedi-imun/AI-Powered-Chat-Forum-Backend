@@ -3,18 +3,17 @@
  */
 
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
 import { Types } from 'mongoose';
 import env from '../../config/env';
 import type { IUser } from '../../modules/user/user.interface';
-import User from '../../modules/user/user.model';
+import { User } from '../../modules/user/user.model';
 
 /**
  * Generate mock JWT token for testing
  */
 export const generateTestToken = (
   userId: string | Types.ObjectId,
-  role: 'user' | 'admin' = 'user',
+  role: 'Admin' | 'Moderator' | 'Member' = 'Member',
 ): string => {
   const payload = {
     userId: userId.toString(),
@@ -31,14 +30,13 @@ export const generateTestToken = (
 export const createTestUser = async (
   overrides?: Partial<IUser>,
 ): Promise<IUser> => {
-  const hashedPassword = await bcrypt.hash('Test@1234', 12);
-
   const defaultUser = {
-    username: `testuser_${Date.now()}`,
+    name: `Test User ${Date.now()}`,
     email: `test_${Date.now()}@example.com`,
-    password: hashedPassword,
-    role: 'user' as const,
-    isVerified: true,
+    password: 'Test@1234', // Will be hashed by pre-save hook
+    role: 'Member' as const,
+    isActive: true,
+    emailVerified: true,
     ...overrides,
   };
 
@@ -50,7 +48,7 @@ export const createTestUser = async (
  * Create a test admin user
  */
 export const createTestAdmin = async (): Promise<IUser> => {
-  return createTestUser({ role: 'admin' });
+  return createTestUser({ role: 'Admin' });
 };
 
 /**
@@ -72,7 +70,7 @@ export const wait = (ms: number): Promise<void> => {
  */
 export const mockAuthRequest = (
   userId: string | Types.ObjectId,
-  role: 'user' | 'admin' = 'user',
+  role: 'Admin' | 'Moderator' | 'Member' = 'Member',
 ) => {
   return {
     user: {
