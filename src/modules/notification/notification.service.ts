@@ -288,7 +288,10 @@ const createThreadCreatedNotification = async (
 	threadId: string,
 	threadTitle: string,
 ): Promise<void> => {
-	await createNotification({
+	console.log(
+		`📢 Creating thread_created notification for user: ${userId}, thread: ${threadId}`,
+	);
+	const notification = await createNotification({
 		userId,
 		type: "thread_created",
 		title: "Your thread has been created",
@@ -296,6 +299,9 @@ const createThreadCreatedNotification = async (
 		link: `/threads/${threadId}`,
 		relatedThreadId: threadId,
 	});
+	console.log(
+		`✅ Thread notification created with ID: ${notification._id}`,
+	);
 };
 
 // Helper: Create AI moderation rejected notification

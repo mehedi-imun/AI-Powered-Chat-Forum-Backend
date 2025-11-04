@@ -73,11 +73,19 @@ const createThread = async (
 	);
 
 	// Notify user that their thread has been created
-	await NotificationService.createThreadCreatedNotification(
-		userId,
-		thread._id?.toString(),
-		thread.title,
-	);
+	try {
+		console.log(
+			`🔔 Creating thread notification for user ${userId}, thread ${thread._id}, title: ${thread.title}`,
+		);
+		await NotificationService.createThreadCreatedNotification(
+			userId,
+			thread._id?.toString(),
+			thread.title,
+		);
+		console.log("✅ Thread notification created successfully");
+	} catch (error) {
+		console.error("❌ Failed to create thread notification:", error);
+	}
 
 	// Emit Socket.IO event to all clients
 	const io = getIO();
