@@ -5,8 +5,8 @@
 import request from 'supertest';
 import express from 'express';
 import httpStatus from 'http-status';
-import AuthRoutes from '../auth.routes';
-import { createTestUser, createTestAdmin, generateTestToken } from '../../__tests__/utils/testHelpers';
+import { AuthRoutes } from '../auth.routes';
+import { createTestUser, createTestAdmin, generateTestToken } from '../../../__tests__/utils/testHelpers';
 import { User } from '../../user/user.model';
 
 // Create Express app for testing
@@ -156,7 +156,7 @@ describe('Auth API Integration Tests', () => {
   describe('POST /api/v1/auth/refresh-token', () => {
     it('should refresh access token with valid refresh token', async () => {
       const user = await createTestUser();
-      const refreshToken = generateTestToken(user._id as string, user.role);
+      const refreshToken = generateTestToken(user._id!.toString(), user.role);
 
       const response = await request(app)
         .post('/api/v1/auth/refresh-token')
@@ -191,7 +191,7 @@ describe('Auth API Integration Tests', () => {
       const user = await createTestUser({
         password: 'OldPassword@123',
       });
-      const token = generateTestToken(user._id as string, user.role);
+      const token = generateTestToken(user._id!.toString(), user.role);
 
       const response = await request(app)
         .post('/api/v1/auth/change-password')
@@ -222,7 +222,7 @@ describe('Auth API Integration Tests', () => {
       const user = await createTestUser({
         password: 'OldPassword@123',
       });
-      const token = generateTestToken(user._id as string, user.role);
+      const token = generateTestToken(user._id!.toString(), user.role);
 
       const response = await request(app)
         .post('/api/v1/auth/change-password')
