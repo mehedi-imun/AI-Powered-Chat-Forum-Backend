@@ -21,6 +21,27 @@ router.get(
 );
 
 router.get(
+	"/users/stats",
+	authenticate,
+	authorize("Admin", "Moderator"),
+	AdminController.getUserStats,
+);
+
+router.get(
+	"/threads/stats",
+	authenticate,
+	authorize("Admin", "Moderator"),
+	AdminController.getThreadStats,
+);
+
+router.get(
+	"/posts/stats",
+	authenticate,
+	authorize("Admin", "Moderator"),
+	AdminController.getPostStats,
+);
+
+router.get(
 	"/users",
 	authenticate,
 	authorize("Admin", "Moderator"),
@@ -33,6 +54,20 @@ router.patch(
 	authorize("Admin"),
 	validateRequest(updateUserSchema),
 	AdminController.updateUser,
+);
+
+router.get(
+	"/posts",
+	authenticate,
+	authorize("Admin", "Moderator"),
+	AdminController.getAllPosts,
+);
+
+router.get(
+	"/threads",
+	authenticate,
+	authorize("Admin", "Moderator"),
+	AdminController.getAllThreads,
 );
 
 router.post(

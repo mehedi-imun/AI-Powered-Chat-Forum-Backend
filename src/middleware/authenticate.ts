@@ -28,7 +28,11 @@ export const authenticate = async (
 			throw new AppError(401, "Unauthorized - Invalid user");
 		}
 
-		req.user = user;
+		req.user = {
+			userId: user._id.toString(),
+			email: user.email,
+			role: user.role,
+		};
 		next();
 	} catch (error) {
 		next(error);
@@ -48,7 +52,11 @@ export const authenticateOptional = async (
 			const decoded = verifyAccessToken(token);
 			const user = await User.findById(decoded.userId);
 			if (user?.isActive) {
-				req.user = user;
+				req.user = {
+					userId: user._id.toString(),
+					email: user.email,
+					role: user.role,
+				};
 			}
 		}
 		next();

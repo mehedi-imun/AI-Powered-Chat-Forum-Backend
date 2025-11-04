@@ -14,6 +14,39 @@ const getDashboardStats = catchAsync(async (_req, res) => {
 	});
 });
 
+const getUserStats = catchAsync(async (_req, res) => {
+	const stats = await AdminService.getUserStats();
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "User statistics retrieved successfully",
+		data: stats,
+	});
+});
+
+const getThreadStats = catchAsync(async (_req, res) => {
+	const stats = await AdminService.getThreadStats();
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Thread statistics retrieved successfully",
+		data: stats,
+	});
+});
+
+const getPostStats = catchAsync(async (_req, res) => {
+	const stats = await AdminService.getPostStats();
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Post statistics retrieved successfully",
+		data: stats,
+	});
+});
+
 const getAllUsers = catchAsync(async (req, res) => {
 	const result = await AdminService.getAllUsers(req.query);
 
@@ -21,6 +54,28 @@ const getAllUsers = catchAsync(async (req, res) => {
 		statusCode: httpStatus.OK,
 		success: true,
 		message: "Users retrieved successfully",
+		data: result,
+	});
+});
+
+const getAllPosts = catchAsync(async (req, res) => {
+	const result = await AdminService.getAllPosts(req.query);
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Posts retrieved successfully",
+		data: result,
+	});
+});
+
+const getAllThreads = catchAsync(async (req, res) => {
+	const result = await AdminService.getAllThreads(req.query);
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Threads retrieved successfully",
 		data: result,
 	});
 });
@@ -173,7 +228,12 @@ const updateSystemSettings = catchAsync(async (req, res) => {
 
 export const AdminController = {
 	getDashboardStats,
+	getUserStats,
+	getThreadStats,
+	getPostStats,
 	getAllUsers,
+	getAllPosts,
+	getAllThreads,
 	updateUser,
 	banUser,
 	unbanUser,

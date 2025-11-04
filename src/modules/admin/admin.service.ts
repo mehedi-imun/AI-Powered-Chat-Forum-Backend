@@ -59,6 +59,154 @@ const getDashboardStats = async (): Promise<IDashboardStats> => {
 	};
 };
 
+const getUserStats = async () => {
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+
+	const lastWeek = new Date(today);
+	lastWeek.setDate(lastWeek.getDate() - 7);
+
+	const lastMonth = new Date(today);
+	lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+	const [
+		totalUsers,
+		activeUsers,
+		verifiedUsers,
+		newToday,
+		newThisWeek,
+		newThisMonth,
+		bannedUsers,
+		usersByRole,
+	] = await Promise.all([
+		User.countDocuments(),
+		User.countDocuments({ isActive: true }),
+		User.countDocuments({ emailVerified: true }),
+		User.countDocuments({ createdAt: { $gte: today } }),
+		User.countDocuments({ createdAt: { $gte: lastWeek } }),
+		User.countDocuments({ createdAt: { $gte: lastMonth } }),
+		Ban.countDocuments({ isActive: true }),
+		User.aggregate([
+			{ $group: { _id: "$role", count: { $sum: 1 } } },
+		]),
+	]);
+
+	return {
+		total: totalUsers,
+		active: activeUsers,
+		verified: verifiedUsers,
+		newToday,
+		newThisWeek,
+		newThisMonth,
+		banned: bannedUsers,
+		byRole: usersByRole.reduce((acc: any, item: any) => {
+			acc[item._id] = item.count;
+			return acc;
+		}, {}),
+	};
+};
+
+const getThreadStats = async () => {
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+
+	const lastWeek = new Date(today);
+	lastWeek.setDate(lastWeek.getDate() - 7);
+
+	const lastMonth = new Date(today);
+	lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+	const [
+		totalThreads,
+		activeThreads,
+		pinnedThreads,
+		lockedThreads,
+		newToday,
+		newThisWeek,
+		newThisMonth,
+		threadsByStatus,
+	] = await Promise.all([
+		Thread.countDocuments({ status: { $ne: "deleted" } }),
+		Thread.countDocuments({ status: "active" }),
+		Thread.countDocuments({ isPinned: true }),
+		Thread.countDocuments({ isLocked: true }),
+		Thread.countDocuments({ createdAt: { $gte: today } }),
+		Thread.countDocuments({ createdAt: { $gte: lastWeek } }),
+		Thread.countDocuments({ createdAt: { $gte: lastMonth } }),
+		Thread.aggregate([
+			{ $match: { status: { $ne: "deleted" } } },
+			{ $group: { _id: "$status", count: { $sum: 1 } } },
+		]),
+	]);
+
+	return {
+		total: totalThreads,
+		active: activeThreads,
+		pinned: pinnedThreads,
+		locked: lockedThreads,
+		newToday,
+		newThisWeek,
+		newThisMonth,
+		byStatus: threadsByStatus.reduce((acc: any, item: any) => {
+			acc[item._id] = item.count;
+			return acc;
+		}, {}),
+	};
+};
+
+const getPostStats = async () => {
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+
+	const lastWeek = new Date(today);
+	lastWeek.setDate(lastWeek.getDate() - 7);
+
+	const lastMonth = new Date(today);
+	lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+	const [
+		totalPosts,
+		activePosts,
+		newToday,
+		newThisWeek,
+		newThisMonth,
+		postsByModeration,
+		flaggedPosts,
+		deletedPosts,
+	] = await Promise.all([
+		Post.countDocuments(),
+		Post.countDocuments({ status: "active" }),
+		Post.countDocuments({ createdAt: { $gte: today } }),
+		Post.countDocuments({ createdAt: { $gte: lastWeek } }),
+		Post.countDocuments({ createdAt: { $gte: lastMonth } }),
+		Post.aggregate([
+			{ $group: { _id: "$moderationStatus", count: { $sum: 1 } } },
+		]),
+		Post.countDocuments({ moderationStatus: "flagged" }),
+		Post.countDocuments({ status: "deleted" }),
+	]);
+
+	const moderationStats = postsByModeration.reduce((acc: any, item: any) => {
+		acc[item._id] = item.count;
+		return acc;
+	}, {});
+
+	return {
+		total: totalPosts,
+		active: activePosts,
+		newToday,
+		newThisWeek,
+		newThisMonth,
+		deleted: deletedPosts,
+		moderation: {
+			pending: moderationStats.pending || 0,
+			approved: moderationStats.approved || 0,
+			rejected: moderationStats.rejected || 0,
+			flagged: flaggedPosts,
+		},
+	};
+};
+
 const getAllUsers = async (filters: IUserFilter) => {
 	const {
 		role,
@@ -96,6 +244,90 @@ const getAllUsers = async (filters: IUserFilter) => {
 
 	return {
 		users,
+		total,
+		page,
+		limit,
+		totalPages: Math.ceil(total / limit),
+	};
+};
+
+const getAllPosts = async (filters: any) => {
+	const {
+		moderationStatus,
+		status,
+		searchTerm,
+		page = 1,
+		limit = 50,
+		sort = "-createdAt",
+	} = filters;
+
+	const query: any = {};
+
+	if (moderationStatus) query.moderationStatus = moderationStatus;
+	if (status) query.status = status;
+	if (searchTerm) {
+		query.content = { $regex: searchTerm, $options: "i" };
+	}
+
+	const skip = (page - 1) * limit;
+
+	const [posts, total] = await Promise.all([
+		Post.find(query)
+			.populate("author", "name email avatar")
+			.populate("threadId", "title")
+			.sort(sort)
+			.skip(skip)
+			.limit(limit)
+			.lean(),
+		Post.countDocuments(query),
+	]);
+
+	return {
+		posts,
+		total,
+		page,
+		limit,
+		totalPages: Math.ceil(total / limit),
+	};
+};
+
+const getAllThreads = async (filters: any) => {
+	const {
+		status,
+		isPinned,
+		isLocked,
+		searchTerm,
+		page = 1,
+		limit = 50,
+		sort = "-createdAt",
+	} = filters;
+
+	const query: any = {};
+
+	if (status) query.status = status;
+	if (isPinned !== undefined) query.isPinned = isPinned;
+	if (isLocked !== undefined) query.isLocked = isLocked;
+	if (searchTerm) {
+		query.$or = [
+			{ title: { $regex: searchTerm, $options: "i" } },
+			{ content: { $regex: searchTerm, $options: "i" } },
+		];
+	}
+
+	const skip = (page - 1) * limit;
+
+	const [threads, total] = await Promise.all([
+		Thread.find(query)
+			.populate("createdBy", "name email avatar")
+			.sort(sort)
+			.skip(skip)
+			.limit(limit)
+			.lean(),
+		Thread.countDocuments(query),
+	]);
+
+	return {
+		threads,
 		total,
 		page,
 		limit,
@@ -484,12 +716,19 @@ const updateSystemSettings = async (
 export const AdminService = {
 	// Dashboard
 	getDashboardStats,
+	getUserStats,
+	getThreadStats,
+	getPostStats,
 
 	// User Management
 	getAllUsers,
 	updateUser,
 	banUser,
 	unbanUser,
+
+	// Content Management
+	getAllPosts,
+	getAllThreads,
 
 	// Content Moderation
 	createReport,

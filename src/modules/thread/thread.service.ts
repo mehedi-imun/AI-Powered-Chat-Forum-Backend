@@ -65,21 +65,22 @@ const createThread = async (
 	// Invalidate cache
 	await invalidateThreadCache();
 
+	// Populate the thread with creator info
+	const populatedThread = await Thread.findById(thread._id).populate(
+		"createdBy",
+		"name email role avatar",
+	);
+
 	// Emit Socket.IO event to all clients
 	const io = getIO();
 	if (io) {
-		const populatedThread = await Thread.findById(thread._id).populate(
-			"createdBy",
-			"name email role avatar",
-		);
-
-		io.emit("thread:created", {
+		io.emit("new-thread", {
 			thread: populatedThread,
 			timestamp: new Date(),
 		});
 	}
 
-	return thread;
+	return populatedThread as IThread;
 };
 
 const getAllThreads = async (
@@ -239,12 +240,12 @@ const updateThread = async (
 	// Emit Socket.IO event to thread room and all clients
 	const io = getIO();
 	if (io) {
-		io.emit("thread:updated", {
+		io.emit("thread-updated", {
 			thread: updatedThread,
 			timestamp: new Date(),
 		});
 
-		io.to(`thread:${id}`).emit("thread:updated", {
+		io.to(`thread:${id}`).emit("thread-updated", {
 			thread: updatedThread,
 			timestamp: new Date(),
 		});
@@ -283,12 +284,12 @@ const deleteThread = async (id: string, userId: string): Promise<void> => {
 	// Emit Socket.IO event to thread room and all clients
 	const io = getIO();
 	if (io) {
-		io.emit("thread:deleted", {
+		io.emit("thread-deleted", {
 			threadId: id,
 			timestamp: new Date(),
 		});
 
-		io.to(`thread:${id}`).emit("thread:deleted", {
+		io.to(`thread:${id}`).emit("thread-deleted", {
 			threadId: id,
 			timestamp: new Date(),
 		});

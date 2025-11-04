@@ -139,7 +139,7 @@ const createPost = async (
 			"name email role avatar",
 		);
 
-		io.to(`thread:${threadId}`).emit("post:created", {
+		io.to(`thread:${threadId}`).emit("new-post", {
 			post: populatedPost,
 			threadId,
 			parentId: parentId || null,
@@ -288,7 +288,7 @@ const updatePost = async (
 			"name email role avatar",
 		);
 
-		io.to(`thread:${post.threadId.toString()}`).emit("post:updated", {
+		io.to(`thread:${post.threadId.toString()}`).emit("post-updated", {
 			post: populatedPost,
 			threadId: post.threadId.toString(),
 			timestamp: new Date(),
@@ -333,7 +333,7 @@ const deletePost = async (id: string, userId: string): Promise<void> => {
 	// Emit Socket.IO event to thread room
 	const io = getIO();
 	if (io) {
-		io.to(`thread:${threadId}`).emit("post:deleted", {
+		io.to(`thread:${threadId}`).emit("post-deleted", {
 			postId,
 			threadId,
 			timestamp: new Date(),
