@@ -8,6 +8,16 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 
 let mongoServer: MongoMemoryServer;
 
+// Mock email service globally
+jest.mock('../services/email.service', () => ({
+  emailService: {
+    sendEmailVerification: jest.fn().mockResolvedValue(undefined),
+    sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+    sendWelcomeEmail: jest.fn().mockResolvedValue(undefined),
+    sendNotificationEmail: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 // Setup: Run before all tests
 beforeAll(async () => {
   // Create in-memory MongoDB instance
