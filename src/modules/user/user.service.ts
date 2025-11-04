@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import { Types } from "mongoose";
 import AppError from "../../errors/AppError";
 import QueryBuilder from "../../utils/queryBuilder";
+import { sanitizeInput, escapeHtml } from "../../utils/sanitize";
 import type {
 	IUser,
 	IUserCreate,
@@ -62,7 +63,13 @@ const createUser = async (
 		);
 	}
 
-	const user = await User.create(userData);
+	// Sanitize text fields to prevent XSS
+	const sanitizedData = {
+		...userData,
+		name: escapeHtml(userData.name),
+	};
+
+	const user = await User.create(sanitizedData);
 	return user as IUserWithoutPassword;
 };
 
@@ -74,7 +81,18 @@ const updateUser = async (
 		throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");
 	}
 
-	const user = await User.findByIdAndUpdate(id, updateData, {
+	// Sanitize text fields to prevent XSS
+	const sanitizedData: IUserUpdate = { ...updateData };
+	
+	if (updateData.name) {
+		sanitizedData.name = escapeHtml(updateData.name);
+	}
+	
+	if (updateData.bio) {
+		sanitizedData.bio = sanitizeInput(updateData.bio);
+	}
+
+	const user = await User.findByIdAndUpdate(id, sanitizedData, {
 		new: true,
 		runValidators: true,
 	});
