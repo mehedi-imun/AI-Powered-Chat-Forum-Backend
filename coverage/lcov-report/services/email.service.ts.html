@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">17.07% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>7/41</span>
+                <span class='fraction'>0/41</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">25% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/8</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">17.07% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>7/41</span>
+                <span class='fraction'>0/41</span>
             </div>
         
             
@@ -309,14 +309,14 @@
 <a name='L244'></a><a href='#L244'>244</a>
 <a name='L245'></a><a href='#L245'>245</a>
 <a name='L246'></a><a href='#L246'>246</a>
-<a name='L247'></a><a href='#L247'>247</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<a name='L247'></a><a href='#L247'>247</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -326,12 +326,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -554,15 +554,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import nodemailer, { type Transporter } from "nodemailer";
-import env from "../config/env";
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import nodemailer, { type Transporter } from "nodemailer";</span>
+<span class="cstat-no" title="statement not covered" >import env from "../config/env";</span>
 &nbsp;
 class EmailService {
 	private transporter: Transporter;
 &nbsp;
-	constructor() {
-		this.transporter = nodemailer.createTransport({
+<span class="fstat-no" title="function not covered" >	constructor() {</span>
+<span class="cstat-no" title="statement not covered" >		this.transporter = nodemailer.createTransport({</span>
 			host: env.SMTP_HOST,
 			port: env.SMTP_PORT,
 			secure: env.SMTP_PORT === 465,
@@ -572,12 +572,12 @@ class EmailService {
 			},
 		} as any);
 &nbsp;
-		this.verifyConnection();
+<span class="cstat-no" title="statement not covered" >		this.verifyConnection();</span>
 	}
 &nbsp;
-	private async verifyConnection() {
-		try {
-			await this.transporter.verify();
+	private async <span class="fstat-no" title="function not covered" >verifyConnection(</span>) {
+<span class="cstat-no" title="statement not covered" >		try {</span>
+<span class="cstat-no" title="statement not covered" >			await this.transporter.verify();</span>
 <span class="cstat-no" title="statement not covered" >			console.log("✅ Email service ready");</span>
 		} catch (error: any) {
 <span class="cstat-no" title="statement not covered" >			console.warn("⚠️  Email service unavailable (check SMTP credentials)");</span>
@@ -800,7 +800,7 @@ class EmailService {
 	}
 }
 &nbsp;
-export const emailService = new EmailService();
+export const <span class="cstat-no" title="statement not covered" >emailService = new EmailService();</span>
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -808,7 +808,7 @@ export const emailService = new EmailService();
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-04T09:44:56.884Z
+                at 2025-11-04T09:56:13.658Z
             </div>
         <script src="../prettify.js"></script>
         <script>
