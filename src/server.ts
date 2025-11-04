@@ -33,7 +33,8 @@ async function startServer() {
 			await connectRabbitMQ();
 			await startAIModerationWorker();
 			await startAISummaryWorker();
-			logger.info("✅ AI Workers started successfully");
+			await startWebhookWorker();
+			logger.info("✅ Workers started successfully (AI Moderation, AI Summary, Webhook)");
 		} catch (rabbitMQError) {
 			logger.warn(
 				{ error: rabbitMQError },
