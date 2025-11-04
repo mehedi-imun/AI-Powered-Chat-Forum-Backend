@@ -67,6 +67,13 @@ const postSchema = new Schema<IPost>(
 				enum: ["positive", "neutral", "negative"],
 			},
 		},
+		aiReasoning: {
+			type: String,
+		},
+		aiRecommendation: {
+			type: String,
+			enum: ["approve", "review", "reject"],
+		},
 		status: {
 			type: String,
 			enum: ["active", "deleted"],

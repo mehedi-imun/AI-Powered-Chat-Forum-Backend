@@ -207,6 +207,122 @@ const getPostStats = async () => {
 	};
 };
 
+const getAIModerationSummary = async () => {
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+
+	const lastWeek = new Date(today);
+	lastWeek.setDate(lastWeek.getDate() - 7);
+
+	// Get posts with AI scores
+	const [
+		totalModerated,
+		moderatedToday,
+		moderatedThisWeek,
+		moderationBreakdown,
+		avgScores,
+		highRiskPosts,
+		recentActions,
+	] = await Promise.all([
+		// Total posts that have been moderated by AI
+		Post.countDocuments({ aiScore: { $exists: true } }),
+
+		// Moderated today
+		Post.countDocuments({
+			aiScore: { $exists: true },
+			createdAt: { $gte: today },
+		}),
+
+		// Moderated this week
+		Post.countDocuments({
+			aiScore: { $exists: true },
+			createdAt: { $gte: lastWeek },
+		}),
+
+		// Breakdown by status
+		Post.aggregate([
+			{ $match: { aiScore: { $exists: true } } },
+			{ $group: { _id: "$moderationStatus", count: { $sum: 1 } } },
+		]),
+
+		// Average AI scores
+		Post.aggregate([
+			{ $match: { aiScore: { $exists: true } } },
+			{
+				$group: {
+					_id: null,
+					avgSpam: { $avg: "$aiScore.spam" },
+					avgToxicity: { $avg: "$aiScore.toxicity" },
+					avgInappropriate: { $avg: "$aiScore.inappropriate" },
+				},
+			},
+		]),
+
+		// High risk posts (any score > 0.7)
+		Post.countDocuments({
+			$or: [
+				{ "aiScore.spam": { $gt: 0.7 } },
+				{ "aiScore.toxicity": { $gt: 0.7 } },
+				{ "aiScore.inappropriate": { $gt: 0.7 } },
+			],
+		}),
+
+		// Recent moderation actions (last 20)
+		Post.find({ aiScore: { $exists: true } })
+			.select(
+				"content moderationStatus aiScore aiReasoning aiRecommendation createdAt author",
+			)
+			.populate("author", "name email")
+			.sort({ createdAt: -1 })
+			.limit(20)
+			.lean(),
+	]);
+
+	const breakdown = moderationBreakdown.reduce((acc: any, item: any) => {
+		acc[item._id] = item.count;
+		return acc;
+	}, {});
+
+	const scores = avgScores[0] || {
+		avgSpam: 0,
+		avgToxicity: 0,
+		avgInappropriate: 0,
+	};
+
+	return {
+		totalModerated,
+		moderatedToday,
+		moderatedThisWeek,
+		breakdown: {
+			approved: breakdown.approved || 0,
+			flagged: breakdown.flagged || 0,
+			rejected: breakdown.rejected || 0,
+			pending: breakdown.pending || 0,
+		},
+		averageScores: {
+			spam: Number(scores.avgSpam?.toFixed(3)) || 0,
+			toxicity: Number(scores.avgToxicity?.toFixed(3)) || 0,
+			inappropriate: Number(scores.avgInappropriate?.toFixed(3)) || 0,
+		},
+		highRiskCount: highRiskPosts,
+		recentActions: recentActions.map((post: any) => ({
+			_id: post._id,
+			content: post.content.substring(0, 100) + "...",
+			moderationStatus: post.moderationStatus,
+			aiScore: post.aiScore,
+			aiReasoning: post.aiReasoning,
+			aiRecommendation: post.aiRecommendation,
+			author: post.author
+				? {
+						name: post.author.name,
+						email: post.author.email,
+					}
+				: null,
+			createdAt: post.createdAt,
+		})),
+	};
+};
+
 const getAllUsers = async (filters: IUserFilter) => {
 	const {
 		role,
@@ -214,7 +330,7 @@ const getAllUsers = async (filters: IUserFilter) => {
 		emailVerified,
 		searchTerm,
 		page = 1,
-		limit = 20,
+		limit = 10,
 		sort = "-createdAt",
 	} = filters;
 
@@ -257,7 +373,7 @@ const getAllPosts = async (filters: any) => {
 		status,
 		searchTerm,
 		page = 1,
-		limit = 50,
+		limit = 10,
 		sort = "-createdAt",
 	} = filters;
 
@@ -298,7 +414,7 @@ const getAllThreads = async (filters: any) => {
 		isLocked,
 		searchTerm,
 		page = 1,
-		limit = 50,
+		limit = 10,
 		sort = "-createdAt",
 	} = filters;
 
@@ -497,7 +613,7 @@ const getAllReports = async (filters: IReportFilter) => {
 		reportType,
 		reportedContentType,
 		page = 1,
-		limit = 20,
+		limit = 10,
 	} = filters;
 
 	const query: any = {};
@@ -719,6 +835,7 @@ export const AdminService = {
 	getUserStats,
 	getThreadStats,
 	getPostStats,
+	getAIModerationSummary,
 
 	// User Management
 	getAllUsers,

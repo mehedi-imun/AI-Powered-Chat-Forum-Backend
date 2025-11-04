@@ -42,6 +42,13 @@ router.get(
 );
 
 router.get(
+	"/ai-moderation/summary",
+	authenticate,
+	authorize("Admin", "Moderator"),
+	AdminController.getAIModerationSummary,
+);
+
+router.get(
 	"/users",
 	authenticate,
 	authorize("Admin", "Moderator"),

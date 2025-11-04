@@ -36,6 +36,8 @@ export const startAIModerationWorker = async (): Promise<void> => {
 					toxicity: moderationResult.toxicityScore,
 					inappropriate: moderationResult.inappropriateScore,
 				};
+				post.aiReasoning = moderationResult.reasoning;
+				post.aiRecommendation = moderationResult.recommendation;
 
 				if (moderationResult.recommendation === "reject") {
 					post.moderationStatus = "rejected";

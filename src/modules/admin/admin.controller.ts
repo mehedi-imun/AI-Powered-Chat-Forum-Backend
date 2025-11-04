@@ -38,12 +38,21 @@ const getThreadStats = catchAsync(async (_req, res) => {
 
 const getPostStats = catchAsync(async (_req, res) => {
 	const stats = await AdminService.getPostStats();
-
 	sendResponse(res, {
 		statusCode: httpStatus.OK,
 		success: true,
 		message: "Post statistics retrieved successfully",
 		data: stats,
+	});
+});
+
+const getAIModerationSummary = catchAsync(async (_req, res) => {
+	const summary = await AdminService.getAIModerationSummary();
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "AI moderation summary retrieved successfully",
+		data: summary,
 	});
 });
 
@@ -231,6 +240,7 @@ export const AdminController = {
 	getUserStats,
 	getThreadStats,
 	getPostStats,
+	getAIModerationSummary,
 	getAllUsers,
 	getAllPosts,
 	getAllThreads,
