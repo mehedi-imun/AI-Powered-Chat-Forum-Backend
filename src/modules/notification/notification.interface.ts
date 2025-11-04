@@ -6,7 +6,11 @@ export type NotificationType =
 	| "thread_comment"
 	| "post_like"
 	| "follow"
-	| "system";
+	| "system"
+	| "post_created"
+	| "thread_created"
+	| "ai_moderation_rejected"
+	| "ai_moderation_flagged";
 
 export interface INotification {
 	_id?: Types.ObjectId;

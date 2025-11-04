@@ -9,6 +9,7 @@ import { initializeCronJobs, stopAllCronJobs } from "./services/cron.service";
 import logger from "./utils/logger";
 import { startAIModerationWorker } from "./workers/ai-moderation.worker";
 import { startAISummaryWorker } from "./workers/ai-summary.worker";
+import { startNotificationWorker } from "./workers/notification.worker";
 import { startWebhookWorker } from "./workers/webhook.worker";
 
 let server: Server | null = null;
@@ -33,8 +34,9 @@ async function startServer() {
 			await connectRabbitMQ();
 			await startAIModerationWorker();
 			await startAISummaryWorker();
+			await startNotificationWorker();
 			await startWebhookWorker();
-			logger.info("✅ Workers started successfully (AI Moderation, AI Summary, Webhook)");
+			logger.info("✅ Workers started successfully (AI Moderation, AI Summary, Notification, Webhook)");
 		} catch (rabbitMQError) {
 			logger.warn(
 				{ error: rabbitMQError },

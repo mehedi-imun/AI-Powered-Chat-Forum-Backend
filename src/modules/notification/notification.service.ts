@@ -264,6 +264,78 @@ const createReplyNotification = async (
 	});
 };
 
+// Helper: Create post created notification
+const createPostCreatedNotification = async (
+	userId: string,
+	postId: string,
+	threadId: string,
+	threadTitle: string,
+): Promise<void> => {
+	await createNotification({
+		userId,
+		type: "post_created",
+		title: "Your post has been published",
+		message: `Your post in "${threadTitle}" is now live and being reviewed by our AI moderator`,
+		link: `/threads/${threadId}#post-${postId}`,
+		relatedThreadId: threadId,
+		relatedPostId: postId,
+	});
+};
+
+// Helper: Create thread created notification
+const createThreadCreatedNotification = async (
+	userId: string,
+	threadId: string,
+	threadTitle: string,
+): Promise<void> => {
+	await createNotification({
+		userId,
+		type: "thread_created",
+		title: "Your thread has been created",
+		message: `Your thread "${threadTitle}" is now live`,
+		link: `/threads/${threadId}`,
+		relatedThreadId: threadId,
+	});
+};
+
+// Helper: Create AI moderation rejected notification
+const createAIModerationRejectedNotification = async (
+	userId: string,
+	postId: string,
+	threadId: string,
+	threadTitle: string,
+	reason: string,
+): Promise<void> => {
+	await createNotification({
+		userId,
+		type: "ai_moderation_rejected",
+		title: "Your post was rejected",
+		message: `Your post in "${threadTitle}" was removed by our AI moderator. Reason: ${reason}`,
+		link: `/threads/${threadId}`,
+		relatedThreadId: threadId,
+		relatedPostId: postId,
+	});
+};
+
+// Helper: Create AI moderation flagged notification
+const createAIModerationFlaggedNotification = async (
+	userId: string,
+	postId: string,
+	threadId: string,
+	threadTitle: string,
+	reason: string,
+): Promise<void> => {
+	await createNotification({
+		userId,
+		type: "ai_moderation_flagged",
+		title: "Your post is under review",
+		message: `Your post in "${threadTitle}" has been flagged for manual review. Reason: ${reason}`,
+		link: `/threads/${threadId}#post-${postId}`,
+		relatedThreadId: threadId,
+		relatedPostId: postId,
+	});
+};
+
 export const NotificationService = {
 	createNotification,
 	getUserNotifications,
@@ -275,4 +347,8 @@ export const NotificationService = {
 	getUnreadCount,
 	createMentionNotification,
 	createReplyNotification,
+	createPostCreatedNotification,
+	createThreadCreatedNotification,
+	createAIModerationRejectedNotification,
+	createAIModerationFlaggedNotification,
 };

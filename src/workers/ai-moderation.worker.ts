@@ -1,7 +1,9 @@
 import { Types } from "mongoose";
 import { QUEUES } from "../config/rabbitmq";
 import { Report } from "../modules/admin/admin.model";
+import { NotificationService } from "../modules/notification/notification.service";
 import { Post } from "../modules/post/post.model";
+import { Thread } from "../modules/thread/thread.model";
 import { AIService } from "../services/ai.service";
 import { queueService } from "../services/queue.service";
 
@@ -58,6 +60,18 @@ export const startAIModerationWorker = async (): Promise<void> => {
 						reportedBy: new Types.ObjectId(authorId), // System report
 						status: "reviewing",
 					});
+
+					// Notify user that their post was rejected
+					const thread = await Thread.findById(post.threadId);
+					if (thread) {
+						await NotificationService.createAIModerationRejectedNotification(
+							authorId,
+							postId,
+							post.threadId.toString(),
+							thread.title,
+							moderationResult.reasoning,
+						);
+					}
 				} else if (moderationResult.recommendation === "review") {
 					post.moderationStatus = "flagged";
 					console.log(
@@ -76,6 +90,18 @@ export const startAIModerationWorker = async (): Promise<void> => {
 						reportedBy: new Types.ObjectId(authorId),
 						status: "pending",
 					});
+
+					// Notify user that their post was flagged
+					const thread = await Thread.findById(post.threadId);
+					if (thread) {
+						await NotificationService.createAIModerationFlaggedNotification(
+							authorId,
+							postId,
+							post.threadId.toString(),
+							thread.title,
+							moderationResult.reasoning,
+						);
+					}
 				} else {
 					post.moderationStatus = "approved";
 					console.log(`✅ Post ${postId} approved by AI`);

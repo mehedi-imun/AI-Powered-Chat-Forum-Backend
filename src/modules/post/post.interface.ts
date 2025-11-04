@@ -16,6 +16,8 @@ export interface IPost {
 		inappropriate: number;
 		sentiment?: string;
 	};
+	aiReasoning?: string;
+	aiRecommendation?: "approve" | "review" | "reject";
 	status: "active" | "deleted";
 	createdAt?: Date;
 	updatedAt?: Date;

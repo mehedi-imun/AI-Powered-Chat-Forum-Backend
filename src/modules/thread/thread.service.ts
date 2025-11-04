@@ -4,6 +4,7 @@ import { cacheService } from "../../config/redis";
 import { getIO } from "../../config/socket";
 import AppError from "../../errors/AppError";
 import QueryBuilder from "../../utils/queryBuilder";
+import { NotificationService } from "../notification/notification.service";
 import { Post } from "../post/post.model";
 // import { User } from "../user/user.model";
 import type {
@@ -69,6 +70,13 @@ const createThread = async (
 	const populatedThread = await Thread.findById(thread._id).populate(
 		"createdBy",
 		"name email role avatar",
+	);
+
+	// Notify user that their thread has been created
+	await NotificationService.createThreadCreatedNotification(
+		userId,
+		thread._id?.toString(),
+		thread.title,
 	);
 
 	// Emit Socket.IO event to all clients

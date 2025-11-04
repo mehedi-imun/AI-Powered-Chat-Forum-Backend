@@ -131,6 +131,14 @@ const createPost = async (
 		authorId: userId,
 	});
 
+	// Notify user that their post has been created
+	await NotificationService.createPostCreatedNotification(
+		userId,
+		post._id?.toString(),
+		threadId,
+		thread.title,
+	);
+
 	// Emit Socket.IO event to thread room
 	const io = getIO();
 	if (io) {

@@ -7,6 +7,28 @@ export interface IEmailStatusWebhook {
 	metadata?: Record<string, unknown>;
 }
 
+export interface INotificationWebhook {
+	event:
+		| "notification.sent"
+		| "notification.delivered"
+		| "notification.failed"
+		| "notification.clicked";
+	notificationId: string;
+	userId: string;
+	type: string;
+	timestamp: Date;
+	metadata?: Record<string, unknown>;
+}
+
+export interface IExternalWebhook {
+	url: string;
+	method: "POST" | "GET" | "PUT";
+	headers?: Record<string, string>;
+	events: string[];
+	secret?: string;
+	isActive: boolean;
+}
+
 export interface IWebhookLog {
 	event: string;
 	payload: Record<string, unknown>;
