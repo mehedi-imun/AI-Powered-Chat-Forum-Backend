@@ -18,7 +18,6 @@ import logger from "./utils/logger";
 
 const app = express();
 
-// IMPORTANT: Prometheus metrics must be registered before other middleware to capture all requests
 const metricsMiddleware = promBundle({
 	includeMethod: true,
 	includePath: true,
@@ -97,14 +96,23 @@ app.use(
 
 app.use(helmet());
 
-const limiter = rateLimit({
+const authLimiter = rateLimit({
 	windowMs: env.RATE_LIMIT_WINDOW_MS,
-	max: env.RATE_LIMIT_MAX_REQUESTS,
-	message: "Too many requests from this IP, please try again later.",
+	max: Math.min(env.RATE_LIMIT_MAX_REQUESTS, 20),
+	message: "Too many auth requests from this IP, please try again later.",
 	standardHeaders: true,
 	legacyHeaders: false,
 });
-app.use("/api/", limiter);
+
+
+const adminLimiter = rateLimit({
+	windowMs: env.RATE_LIMIT_WINDOW_MS,
+	max: Math.max(env.RATE_LIMIT_MAX_REQUESTS, 100),
+	message: "Too many admin requests from this IP, please try again later.",
+	standardHeaders: true,
+	legacyHeaders: false,
+});
+
 
 app.use(
 	cors({
@@ -116,12 +124,14 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use("/api/v1/auth", AuthRoutes);
+// Apply authLimiter to authentication routes (login, register, etc.)
+app.use("/api/v1/auth", authLimiter, AuthRoutes);
 app.use("/api/v1/users", UserRoutes);
 app.use("/api/v1/threads", ThreadRoutes);
 app.use("/api/v1/posts", PostRoutes);
 app.use("/api/v1/notifications", NotificationRoutes);
-app.use("/api/v1/admin", AdminRoutes);
+// Admin routes are sensitive; apply adminLimiter
+app.use("/api/v1/admin", adminLimiter, AdminRoutes);
 app.use("/api/v1/webhook", WebhookRoutes);
 app.get("/health", (_req, res) => {
 	res.status(200).json({
