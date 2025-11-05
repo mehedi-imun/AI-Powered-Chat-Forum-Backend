@@ -123,7 +123,7 @@ app.use("/api/v1/threads", ThreadRoutes);
 app.use("/api/v1/posts", PostRoutes);
 app.use("/api/v1/notifications", NotificationRoutes);
 // Admin routes are sensitive; apply adminLimiter
-app.use("/api/v1/admin", adminLimiter, AdminRoutes);
+app.use("/api/v1/admin", AdminRoutes);
 app.use("/api/v1/webhook", WebhookRoutes);
 app.get("/health", (_req, res) => {
 	res.status(200).json({
