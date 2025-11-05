@@ -32,6 +32,7 @@ export const authenticate = async (
 			userId: user._id.toString(),
 			email: user.email,
 			role: user.role,
+			emailVerified: user.emailVerified,
 		};
 		next();
 	} catch (error) {
@@ -56,6 +57,7 @@ export const authenticateOptional = async (
 					userId: user._id.toString(),
 					email: user.email,
 					role: user.role,
+					emailVerified: user.emailVerified,
 				};
 			}
 		}

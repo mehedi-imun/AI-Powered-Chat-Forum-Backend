@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate";
 import { authorize } from "../../middleware/authorize";
+import requireEmailVerification from "../../middleware/requireEmailVerification";
 import { validateRequest } from "../../middleware/validateRequest";
 import { PostController } from "./post.controller";
 import {
@@ -22,6 +23,7 @@ router.get(
 router.post(
 	"/",
 	authenticate,
+	requireEmailVerification,
 	validateRequest(createPostSchema),
 	PostController.createPost,
 );

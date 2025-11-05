@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import httpStatus from "http-status";
+import env from "../../config/env";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { AuthService } from "./auth.service";
@@ -92,11 +93,29 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
 	const { token } = req.params;
 	const result = await AuthService.verifyEmail(token);
 
+	// Set httpOnly cookies for auto-login
+	res.cookie("accessToken", result.accessToken, {
+		httpOnly: true,
+		secure: env.NODE_ENV === "production",
+		sameSite: "lax",
+		maxAge: 15 * 60 * 1000, // 15 minutes
+	});
+
+	res.cookie("refreshToken", result.refreshToken, {
+		httpOnly: true,
+		secure: env.NODE_ENV === "production",
+		sameSite: "lax",
+		maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+	});
+
 	sendResponse(res, {
 		statusCode: httpStatus.OK,
 		success: true,
 		message: result.message,
-		data: null,
+		data: {
+			user: result.user,
+			accessToken: result.accessToken,
+		},
 	});
 });
 

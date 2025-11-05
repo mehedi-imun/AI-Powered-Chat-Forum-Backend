@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate";
+import requireEmailVerification from "../../middleware/requireEmailVerification";
 import { validateRequest } from "../../middleware/validateRequest";
 import { ThreadController } from "./thread.controller";
 import {
@@ -28,6 +29,7 @@ router.get(
 router.post(
 	"/",
 	authenticate,
+	requireEmailVerification,
 	validateRequest(createThreadSchema),
 	ThreadController.createThread,
 );

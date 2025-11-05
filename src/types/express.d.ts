@@ -5,6 +5,7 @@ declare global {
 				userId: string;
 				email: string;
 				role: "Admin" | "Moderator" | "Member";
+				emailVerified?: boolean;
 			};
 		}
 	}

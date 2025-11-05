@@ -207,8 +207,15 @@ const changePassword = async (
 	};
 };
 
-// Verify email with token
-const verifyEmail = async (token: string): Promise<{ message: string }> => {
+// Verify email with token and auto-login
+const verifyEmail = async (
+	token: string,
+): Promise<{
+	message: string;
+	accessToken: string;
+	refreshToken: string;
+	user: Partial<IUser>;
+}> => {
 	const hashedToken = hashResetToken(token);
 
 	const user = await User.findOne({
@@ -226,10 +233,40 @@ const verifyEmail = async (token: string): Promise<{ message: string }> => {
 	user.emailVerified = true;
 	user.emailVerificationToken = undefined;
 	user.emailVerificationExpires = undefined;
+	user.lastLoginAt = new Date();
 	await user.save();
 
+	// Generate tokens for auto-login
+	const accessToken = generateAccessToken({
+		userId: user._id.toString(),
+		email: user.email,
+		role: user.role,
+	});
+
+	const refreshToken = generateRefreshToken({
+		userId: user._id.toString(),
+		email: user.email,
+	});
+
+	// Store refresh token in Redis
+	await cacheService.set(
+		`refreshToken:${user._id}`,
+		refreshToken,
+		7 * 24 * 60 * 60,
+	);
+
 	return {
-		message: "Email verified successfully",
+		message: "Email verified successfully. You are now logged in!",
+		accessToken,
+		refreshToken,
+		user: {
+			_id: user._id,
+			name: user.name,
+			email: user.email,
+			role: user.role,
+			avatar: user.avatar,
+			emailVerified: user.emailVerified,
+		},
 	};
 };
 
