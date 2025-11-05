@@ -6,7 +6,6 @@ import AppError from "../../errors/AppError";
 import QueryBuilder from "../../utils/queryBuilder";
 import { NotificationService } from "../notification/notification.service";
 import { Post } from "../post/post.model";
-// import { User } from "../user/user.model";
 import type {
 	IThread,
 	IThreadCreate,

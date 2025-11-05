@@ -2,18 +2,9 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
-
-# Install ALL dependencies (including dev dependencies for building)
-RUN npm ci && \
-    npm cache clean --force
-
-# Copy source code
+RUN npm ci && npm cache clean --force
 COPY . .
-
-# Build TypeScript
 RUN npm run build
 
 # Production stage
@@ -22,31 +13,22 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
-# Copy package files
+ENV NODE_ENV=production
+ARG PORT=5000
+ENV PORT=$PORT
+
 COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
 
-# Install only production dependencies
-RUN npm ci --only=production && \
-    npm cache clean --force
-
-# Copy built files from builder
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-
-# Create logs directory
 RUN mkdir -p logs && chown -R nodejs:nodejs logs
 
-# Switch to non-root user
 USER nodejs
+EXPOSE $PORT
 
-# Expose port
-EXPOSE 5000
-
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s \
-  CMD node -e "require('http').get('http://localhost:5000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+    CMD node -e "require('http').get('http://localhost:${PORT}/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application
 CMD ["node", "dist/server.js"]
