@@ -54,7 +54,10 @@ const getUserNotifications = async (
 ): Promise<{
 	notifications: INotificationWithRelations[];
 	total: number;
+	totalPages: number;
 	unreadCount: number;
+	page: number;
+	limit: number;
 }> => {
 	const page = Number(query.page) || 1;
 	const limit = Number(query.limit) || 20;
@@ -80,6 +83,7 @@ const getUserNotifications = async (
 		.limit(limit);
 
 	const total = await Notification.countDocuments(filter);
+	const totalPages = Math.ceil(total / limit);
 	const unreadCount = await Notification.countDocuments({
 		userId: new Types.ObjectId(userId),
 		isRead: false,
@@ -88,7 +92,10 @@ const getUserNotifications = async (
 	return {
 		notifications: notifications as INotificationWithRelations[],
 		total,
+		totalPages,
 		unreadCount,
+		page,
+		limit,
 	};
 };
 
