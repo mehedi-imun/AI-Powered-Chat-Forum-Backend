@@ -105,14 +105,6 @@ const authLimiter = rateLimit({
 });
 
 
-const adminLimiter = rateLimit({
-	windowMs: env.RATE_LIMIT_WINDOW_MS,
-	max: Math.max(env.RATE_LIMIT_MAX_REQUESTS, 100),
-	message: "Too many admin requests from this IP, please try again later.",
-	standardHeaders: true,
-	legacyHeaders: false,
-});
-
 
 app.use(
 	cors({
