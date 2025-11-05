@@ -10,6 +10,10 @@ import { User } from "./user.model";
 const router = Router();
 
 router.get("/", UserController.getAllUsers);
+
+// Get current user (must be before /:id to avoid conflict)
+router.get("/me", authenticate, UserController.getCurrentUser);
+
 router.get("/:id", UserController.getUserById);
 
 // Update own profile

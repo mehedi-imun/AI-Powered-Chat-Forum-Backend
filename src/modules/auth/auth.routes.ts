@@ -36,7 +36,7 @@ router.post(
 	AuthController.resetPassword,
 );
 
-router.get("/verify-email/:token", AuthController.verifyEmail);
+router.post("/verify-email", AuthController.verifyEmail);
 
 router.post(
 	"/change-password",

@@ -48,9 +48,22 @@ const deleteUser = catchAsync(async (req, res) => {
 	});
 });
 
+const getCurrentUser = catchAsync(async (req, res) => {
+	const userId = req.user?.userId;
+	const user = await UserService.getUserById(userId!);
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Current user retrieved successfully",
+		data: { user },
+	});
+});
+
 export const UserController = {
 	getAllUsers,
 	getUserById,
 	updateUser,
 	deleteUser,
+	getCurrentUser,
 };

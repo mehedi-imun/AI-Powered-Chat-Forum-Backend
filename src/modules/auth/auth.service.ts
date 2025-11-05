@@ -1,5 +1,6 @@
 import httpStatus from "http-status";
 import env from "../../config/env";
+import { cacheService } from "../../config/redis";
 import AppError from "../../errors/AppError";
 import { emailService } from "../../services/email.service";
 import {
@@ -10,6 +11,7 @@ import {
 	verifyRefreshToken,
 } from "../../utils/jwt";
 import { User } from "../user/user.model";
+import type { IUser } from "../user/user.interface";
 import type { ILoginResponse, IRefreshTokenResponse } from "./auth.interface";
 
 // Login user
@@ -96,7 +98,7 @@ const register = async (
 	name: string,
 	email: string,
 	password: string,
-): Promise<{ message: string }> => {
+): Promise<{ message: string; user: { email: string } }> => {
 	const existingUser = await User.findOne({ email });
 	if (existingUser) {
 		throw new AppError(
@@ -105,24 +107,34 @@ const register = async (
 		);
 	}
 
+	// Generate email verification token
+	const verificationToken = generatePasswordResetToken();
+	const hashedToken = hashResetToken(verificationToken);
+
 	const user = await User.create({
 		name,
 		email,
 		password,
 		role: "Member",
-		emailVerified: true, // Auto-verify for now (change to false when email verification is ready)
+		emailVerified: false,
+		emailVerificationToken: hashedToken,
+		emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
 	});
 
+	// Send verification email
+	const verificationUrl = `${env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+	console.log(`📧 Sending verification email to ${user.email}`);
+	console.log(`🔗 Verification URL: ${verificationUrl}`);
 	emailService
-		.sendEmailVerification(
-			user.email,
-			user.name,
-			`${env.FRONTEND_URL}/verify-email?token=dummy-token`,
-		)
-		.catch((err) => console.error("Failed to send welcome email:", err));
+		.sendEmailVerification(user.email, user.name, verificationUrl)
+		.catch((err) => console.error("Failed to send verification email:", err));
 
 	return {
-		message: "Registration successful! Welcome to Chat Forum.",
+		message:
+			"Registration successful! Please check your email to verify your account.",
+		user: {
+			email: user.email,
+		},
 	};
 };
 
@@ -246,6 +258,7 @@ const verifyEmail = async (
 	const refreshToken = generateRefreshToken({
 		userId: user._id.toString(),
 		email: user.email,
+		role: user.role,
 	});
 
 	// Store refresh token in Redis

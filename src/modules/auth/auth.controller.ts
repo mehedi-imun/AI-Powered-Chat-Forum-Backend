@@ -40,7 +40,9 @@ const register = catchAsync(async (req: Request, res: Response) => {
 		statusCode: httpStatus.CREATED,
 		success: true,
 		message: result.message,
-		data: null,
+		data: {
+			user: result.user,
+		},
 	});
 });
 
@@ -90,7 +92,7 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
 
 // Verify email controller
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
-	const { token } = req.params;
+	const { token } = req.body;
 	const result = await AuthService.verifyEmail(token);
 
 	// Set httpOnly cookies for auto-login
@@ -115,6 +117,7 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
 		data: {
 			user: result.user,
 			accessToken: result.accessToken,
+			refreshToken: result.refreshToken,
 		},
 	});
 });
