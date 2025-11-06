@@ -1,3 +1,6 @@
+/**
+ * Unit tests for User Service
+ */
 
 import httpStatus from 'http-status';
 import { Types } from 'mongoose';
@@ -6,6 +9,7 @@ import { User } from '../user.model';
 import AppError from '../../../errors/AppError';
 import QueryBuilder from '../../../utils/queryBuilder';
 
+// Mock dependencies
 jest.mock('../user.model');
 jest.mock('../../../utils/queryBuilder');
 
