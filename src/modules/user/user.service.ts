@@ -63,7 +63,6 @@ const createUser = async (
 		);
 	}
 
-	// Sanitize text fields to prevent XSS
 	const sanitizedData = {
 		...userData,
 		name: escapeHtml(userData.name),
@@ -81,7 +80,6 @@ const updateUser = async (
 		throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");
 	}
 
-	// Sanitize text fields to prevent XSS
 	const sanitizedData: IUserUpdate = { ...updateData };
 	
 	if (updateData.name) {

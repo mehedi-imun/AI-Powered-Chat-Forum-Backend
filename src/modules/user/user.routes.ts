@@ -11,12 +11,10 @@ const router = Router();
 
 router.get("/", UserController.getAllUsers);
 
-// Get current user (must be before /:id to avoid conflict)
 router.get("/me", authenticate, UserController.getCurrentUser);
 
 router.get("/:id", UserController.getUserById);
 
-// Update own profile
 router.patch(
 	"/me",
 	authenticate,
@@ -24,7 +22,6 @@ router.patch(
 	UserController.updateUser,
 );
 
-// Update any user profile (Admin only or own profile)
 router.patch(
 	"/:id",
 	authenticate,
@@ -33,7 +30,6 @@ router.patch(
 	UserController.updateUser,
 );
 
-// Delete user (Admin only)
 router.delete(
 	"/:id",
 	authenticate,

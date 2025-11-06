@@ -1,15 +1,9 @@
-/**
- * Unit Tests for Ownership Authorization Middleware
- * 
- * Tests resource ownership checks and access control
- */
 
 import type { Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { authorizeOwnership, authorizeOwnProfile, authorizeOwnData } from '../authorizeOwnership';
 import AppError from '../../errors/AppError';
 
-// Mock user model for testing
 const MockModel = mongoose.model(
 	'MockResource',
 	new mongoose.Schema({
@@ -18,7 +12,6 @@ const MockModel = mongoose.model(
 	}),
 );
 
-// Mock request, response, next
 const mockRequest = (params: any, user: any, body: any = {}) => ({
 	params,
 	user,
@@ -94,7 +87,6 @@ describe('Authorization Ownership Middleware', () => {
 			const res = mockResponse();
 			const next = jest.fn();
 
-			// Mock findById to return null
 			jest.spyOn(MockModel, 'findById').mockReturnValue({
 				select: jest.fn().mockResolvedValue(null),
 			} as any);
@@ -113,7 +105,6 @@ describe('Authorization Ownership Middleware', () => {
 			const res = mockResponse();
 			const next = jest.fn();
 
-			// Mock findById to return resource with different owner
 			jest.spyOn(MockModel, 'findById').mockReturnValue({
 				select: jest.fn().mockResolvedValue({ createdBy: ownerId }),
 			} as any);
@@ -134,7 +125,6 @@ describe('Authorization Ownership Middleware', () => {
 			const res = mockResponse();
 			const next = jest.fn();
 
-			// Mock findById to return resource owned by user
 			jest.spyOn(MockModel, 'findById').mockReturnValue({
 				select: jest.fn().mockResolvedValue({ createdBy: userId }),
 			} as any);

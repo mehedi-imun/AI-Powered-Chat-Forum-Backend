@@ -2,14 +2,11 @@ import pino from "pino";
 import pinoPretty from "pino-pretty";
 import env from "../config/env";
 
-// Development: Pretty console output only (no log files)
-// Production: JSON to files + console
 const isDevelopment = env.NODE_ENV === "development";
 
 let logger: pino.Logger;
 
 if (isDevelopment) {
-	// Development mode: Pretty console output only (no files)
 	const prettyStream = pinoPretty({
 		colorize: true,
 		translateTime: "SYS:HH:MM:ss",
@@ -29,19 +26,16 @@ if (isDevelopment) {
 		prettyStream,
 	);
 
-	console.log("🎨 Logger mode: Development (Pretty Console, No Files)");
+	logger.info("🎨 Logger mode: Development (Pretty Console, No Files)");
 } else {
-	// Production mode: JSON logs to files + console
 	const fs = require("node:fs");
 	const path = require("node:path");
 
-	// Ensure logs directory exists
 	const logsDir = path.join(process.cwd(), "logs");
 	if (!fs.existsSync(logsDir)) {
 		fs.mkdirSync(logsDir, { recursive: true });
 	}
 
-	// File streams
 	const errorStream = pino.destination({
 		dest: path.join(logsDir, "error.log"),
 		sync: false,
@@ -52,7 +46,6 @@ if (isDevelopment) {
 		sync: false,
 	});
 
-	// Main logger for console
 	logger = pino({
 		level: "info",
 		base: {
@@ -67,11 +60,9 @@ if (isDevelopment) {
 		},
 	});
 
-	// Separate file loggers
 	const errorLogger = pino({ level: "error" }, errorStream);
 	const combinedLogger = pino(combinedStream);
 
-	// Intercept and duplicate error logs to files
 	const originalError = logger.error.bind(logger);
 	logger.error = (obj: any, msg?: string, ...args: any[]) => {
 		originalError(obj, msg, ...args);
@@ -80,7 +71,6 @@ if (isDevelopment) {
 		return logger;
 	};
 
-	// Intercept all logs for combined file
 	const originalInfo = logger.info.bind(logger);
 	logger.info = (obj: any, msg?: string, ...args: any[]) => {
 		originalInfo(obj, msg, ...args);
@@ -103,7 +93,6 @@ if (isDevelopment) {
 	};
 }
 
-// Helper functions (compatible with existing codebase)
 export const logInfo = (message: string, meta?: any) => {
 	logger.info({ emoji: "ℹ️", ...meta }, message);
 };
@@ -128,5 +117,4 @@ export const createChildLogger = (context: Record<string, any>) => {
 	return logger.child(context);
 };
 
-// Export logger instance
 export default logger;

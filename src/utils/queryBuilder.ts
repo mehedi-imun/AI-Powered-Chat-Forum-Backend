@@ -11,9 +11,6 @@ class QueryBuilder<T> {
 		this.query = query;
 	}
 
-	/**
-	 * Apply case-insensitive search across multiple fields.
-	 */
 	search(searchableFields: string[]): this {
 		const searchTerm = this.query?.searchTerm;
 		if (searchTerm) {
@@ -27,9 +24,6 @@ class QueryBuilder<T> {
 		return this;
 	}
 
-	/**
-	 * Apply direct filtering excluding reserved fields.
-	 */
 	filter(): this {
 		const queryObj = { ...this.query };
 		const excludeFields = [
@@ -41,12 +35,10 @@ class QueryBuilder<T> {
 			"search",
 		];
 
-		// Remove reserved fields
 		for (const field of excludeFields) {
 			delete queryObj[field];
 		}
 
-		// Remove fields with empty values or "all" value
 		const cleanedQuery: Record<string, unknown> = {};
 		for (const [key, value] of Object.entries(queryObj)) {
 			if (value && value !== "" && value !== "all") {
@@ -58,9 +50,6 @@ class QueryBuilder<T> {
 		return this;
 	}
 
-	/**
-	 * Apply sorting based on query, defaulting to newest first.
-	 */
 	sort(): this {
 		const sortBy =
 			(this.query?.sort as string)?.split(",").join(" ") || "-createdAt";
@@ -68,9 +57,6 @@ class QueryBuilder<T> {
 		return this;
 	}
 
-	/**
-	 * Apply pagination based on page and limit query params.
-	 */
 	paginate(): this {
 		const page = Number(this.query?.page) || 1;
 		const limit = Number(this.query?.limit) || 10;
@@ -80,9 +66,6 @@ class QueryBuilder<T> {
 		return this;
 	}
 
-	/**
-	 * Limit fields returned from the query.
-	 */
 	fields(): this {
 		const selectFields =
 			(this.query?.fields as string)?.split(",").join(" ") || "-__v";
@@ -91,9 +74,6 @@ class QueryBuilder<T> {
 		return this;
 	}
 
-	/**
-	 * Get total document count and meta info for pagination.
-	 */
 	async countTotal() {
 		const filters = this.modelQuery.getFilter();
 		const total = await this.modelQuery.model.countDocuments(filters);
@@ -104,9 +84,6 @@ class QueryBuilder<T> {
 		return { page, limit, total, totalPage };
 	}
 
-	/**
-	 * Return the final built Mongoose query.
-	 */
 	build() {
 		return this.modelQuery;
 	}

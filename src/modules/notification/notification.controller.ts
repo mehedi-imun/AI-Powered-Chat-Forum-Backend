@@ -32,7 +32,6 @@ const getNotificationById = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-// Mark notification as read
 const markAsRead = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.user!.userId;
 	const { id } = req.params;
@@ -47,7 +46,6 @@ const markAsRead = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-// Mark all notifications as read
 const markAllAsRead = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.user!.userId;
 

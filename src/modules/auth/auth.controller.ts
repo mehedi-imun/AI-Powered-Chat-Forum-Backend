@@ -5,7 +5,6 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { AuthService } from "./auth.service";
 
-// Login controller
 const login = catchAsync(async (req: Request, res: Response) => {
 	const { email, password } = req.body;
 	const result = await AuthService.login(email, password);
@@ -18,7 +17,6 @@ const login = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-// Refresh token controller
 const refreshToken = catchAsync(async (req: Request, res: Response) => {
 	const { refreshToken } = req.body;
 	const result = await AuthService.refreshAccessToken(refreshToken);
@@ -31,7 +29,6 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-// Register controller
 const register = catchAsync(async (req: Request, res: Response) => {
 	const { name, email, password } = req.body;
 	const result = await AuthService.register(name, email, password);
@@ -46,7 +43,6 @@ const register = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-// Forgot password controller
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {
 	const { email } = req.body;
 	const result = await AuthService.forgotPassword(email);
@@ -59,7 +55,6 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-// Reset password controller
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
 	const { token, newPassword } = req.body;
 	const result = await AuthService.resetPassword(token, newPassword);
@@ -72,7 +67,6 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-// Change password controller
 const changePassword = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.user!.userId;
 	const { currentPassword, newPassword } = req.body;
@@ -90,12 +84,10 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-// Verify email controller
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
 	const { token } = req.body;
 	const result = await AuthService.verifyEmail(token);
 
-	// Set httpOnly cookies for auto-login
 	res.cookie("accessToken", result.accessToken, {
 		httpOnly: true,
 		secure: env.NODE_ENV === "production",

@@ -1,8 +1,3 @@
-/**
- * Unit Tests for HTML Sanitization Utility
- * 
- * Tests XSS prevention and HTML sanitization functions
- */
 
 import {
 	sanitizeInput,

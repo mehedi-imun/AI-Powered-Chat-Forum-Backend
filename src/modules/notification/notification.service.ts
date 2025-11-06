@@ -1,3 +1,4 @@
+import logger from "../../utils/logger";
 import httpStatus from "http-status";
 import { Types } from "mongoose";
 import { getIO } from "../../config/socket";
@@ -31,7 +32,6 @@ const createNotification = async (
 		isRead: false,
 	});
 
-	// Emit Socket.IO event to user's personal room
 	const io = getIO();
 	if (io) {
 		const populatedNotification = await Notification.findById(notification._id)
@@ -63,7 +63,6 @@ const getUserNotifications = async (
 	const limit = Number(query.limit) || 20;
 	const skip = (page - 1) * limit;
 
-	// Build filter
 	const filter: any = { userId: new Types.ObjectId(userId) };
 
 	if (query.isRead !== undefined) {
@@ -118,7 +117,6 @@ const getNotificationById = async (
 	return notification as INotificationWithRelations;
 };
 
-// Mark notification as read
 const markAsRead = async (
 	id: string,
 	userId: string,
@@ -137,7 +135,6 @@ const markAsRead = async (
 		notification.readAt = new Date();
 		await notification.save();
 
-		// Emit Socket.IO event
 		const io = getIO();
 		if (io) {
 			const unreadCount = await Notification.countDocuments({
@@ -156,7 +153,6 @@ const markAsRead = async (
 	return notification;
 };
 
-// Mark all notifications as read
 const markAllAsRead = async (
 	userId: string,
 ): Promise<{ modifiedCount: number }> => {
@@ -171,7 +167,6 @@ const markAllAsRead = async (
 		},
 	);
 
-	// Emit Socket.IO event
 	const io = getIO();
 	if (io) {
 		io.to(`user:${userId}`).emit("notification:all_read", {
@@ -197,7 +192,6 @@ const deleteNotification = async (
 
 	await Notification.findByIdAndDelete(id);
 
-	// Emit Socket.IO event
 	const io = getIO();
 	if (io) {
 		const unreadCount = await Notification.countDocuments({
@@ -231,7 +225,6 @@ const getUnreadCount = async (userId: string): Promise<number> => {
 	});
 };
 
-// Helper: Create mention notification
 const createMentionNotification = async (
 	mentionedUserId: string,
 	mentionedBy: string,
@@ -251,7 +244,6 @@ const createMentionNotification = async (
 	});
 };
 
-// Helper: Create reply notification
 const createReplyNotification = async (
 	recipientUserId: string,
 	repliedBy: string,
@@ -271,7 +263,6 @@ const createReplyNotification = async (
 	});
 };
 
-// Helper: Create post created notification
 const createPostCreatedNotification = async (
 	userId: string,
 	postId: string,
@@ -289,13 +280,12 @@ const createPostCreatedNotification = async (
 	});
 };
 
-// Helper: Create thread created notification
 const createThreadCreatedNotification = async (
 	userId: string,
 	threadId: string,
 	threadTitle: string,
 ): Promise<void> => {
-	console.log(
+	logger.info(
 		`📢 Creating thread_created notification for user: ${userId}, thread: ${threadId}`,
 	);
 	const notification = await createNotification({
@@ -306,12 +296,11 @@ const createThreadCreatedNotification = async (
 		link: `/threads/${threadId}`,
 		relatedThreadId: threadId,
 	});
-	console.log(
+	logger.info(
 		`✅ Thread notification created with ID: ${notification._id}`,
 	);
 };
 
-// Helper: Create AI moderation rejected notification
 const createAIModerationRejectedNotification = async (
 	userId: string,
 	postId: string,
@@ -330,7 +319,6 @@ const createAIModerationRejectedNotification = async (
 	});
 };
 
-// Helper: Create AI moderation flagged notification
 const createAIModerationFlaggedNotification = async (
 	userId: string,
 	postId: string,

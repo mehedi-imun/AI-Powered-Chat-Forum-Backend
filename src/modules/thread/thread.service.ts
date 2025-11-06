@@ -1,3 +1,4 @@
+import logger from "../../utils/logger";
 import httpStatus from "http-status";
 import { Types } from "mongoose";
 import { cacheService } from "../../config/redis";
@@ -19,19 +20,15 @@ const CACHE_TTL = 300; // 5 minutes
 const CACHE_KEY_PREFIX = "thread:";
 const CACHE_KEY_LIST = "threads:list";
 
-// Helper to invalidate cache
 const invalidateThreadCache = async (threadId?: string): Promise<void> => {
   try {
-    // Invalidate list cache
     await cacheService.del(CACHE_KEY_LIST);
 
-    // Invalidate specific thread cache if ID provided
     if (threadId) {
       await cacheService.del(`${CACHE_KEY_PREFIX}${threadId}`);
     }
   } catch (error) {
-    console.error("Cache invalidation error:", error);
-    // Don't throw - cache errors shouldn't break the app
+    logger.error("Cache invalidation error");
   }
 };
 
@@ -62,7 +59,6 @@ const createThread = async (
     moderationStatus: "pending", // Changed to pending - will be moderated by AI
   });
 
-  // Publish initial post to AI moderation queue
   const { publishAIModeration } = await import("../../services/queue.service");
   await publishAIModeration({
     postId: initialPost._id?.toString(),
@@ -70,18 +66,15 @@ const createThread = async (
     authorId: userId,
   });
 
-  // Invalidate cache
   await invalidateThreadCache();
 
-  // Populate the thread with creator info
   const populatedThread = await Thread.findById(thread._id).populate(
     "createdBy",
     "name email role avatar"
   );
 
-  // Notify user that their thread has been created
   try {
-    console.log(
+    logger.info(
       `🔔 Creating thread notification for user ${userId}, thread ${thread._id}, title: ${thread.title}`
     );
     await NotificationService.createThreadCreatedNotification(
@@ -89,12 +82,11 @@ const createThread = async (
       thread._id?.toString(),
       thread.title
     );
-    console.log("✅ Thread notification created successfully");
+    logger.info("✅ Thread notification created successfully");
   } catch (error) {
-    console.error("❌ Failed to create thread notification:", error);
+    logger.error("❌ Failed to create thread notification");
   }
 
-  // Emit Socket.IO event to all clients
   const io = getIO();
   if (io) {
     io.emit("new-thread", {
@@ -114,7 +106,6 @@ const getAllThreads = async (
   page: number;
   limit: number;
 }> => {
-  // Try to get from cache
   const cacheKey = `${CACHE_KEY_LIST}:${JSON.stringify(query)}`;
   const cached = await cacheService.getJSON(cacheKey);
 
@@ -162,14 +153,12 @@ const getAllThreads = async (
     limit,
   };
 
-  // Cache the result
   await cacheService.setJSON(cacheKey, result, CACHE_TTL);
 
   return result;
 };
 
 const getThreadById = async (id: string): Promise<IThreadWithAuthor> => {
-  // Try cache first
   const cacheKey = `${CACHE_KEY_PREFIX}${id}`;
   const cached = await cacheService.getJSON(cacheKey);
 
@@ -186,10 +175,8 @@ const getThreadById = async (id: string): Promise<IThreadWithAuthor> => {
     throw new AppError(httpStatus.NOT_FOUND, "Thread not found");
   }
 
-  // Increment view count (async, don't wait)
   Thread.findByIdAndUpdate(id, { $inc: { viewCount: 1 } }).exec();
 
-  // Cache the thread
   await cacheService.setJSON(cacheKey, thread, CACHE_TTL);
 
   return thread as IThreadWithAuthor;
@@ -212,10 +199,8 @@ const getThreadBySlug = async (slug: string): Promise<IThreadWithAuthor> => {
     throw new AppError(httpStatus.NOT_FOUND, "Thread not found");
   }
 
-  // Increment view count
   Thread.findByIdAndUpdate(thread._id, { $inc: { viewCount: 1 } }).exec();
 
-  // Cache the thread
   await cacheService.setJSON(cacheKey, thread, CACHE_TTL);
 
   return thread as IThreadWithAuthor;
@@ -235,7 +220,6 @@ const updateThread = async (
     throw new AppError(httpStatus.NOT_FOUND, "Thread not found");
   }
 
-  // Check if user is the creator
   if (thread.createdBy.toString() !== userId) {
     throw new AppError(
       httpStatus.FORBIDDEN,
@@ -243,7 +227,6 @@ const updateThread = async (
     );
   }
 
-  // Check if thread is locked
   if (thread.isLocked && !data.isLocked) {
     throw new AppError(httpStatus.BAD_REQUEST, "Thread is locked");
   }
@@ -257,10 +240,8 @@ const updateThread = async (
     throw new AppError(httpStatus.NOT_FOUND, "Thread not found");
   }
 
-  // Invalidate cache
   await invalidateThreadCache(id);
 
-  // Emit Socket.IO event to thread room and all clients
   const io = getIO();
   if (io) {
     io.emit("thread-updated", {
@@ -287,7 +268,6 @@ const deleteThread = async (id: string, userId: string): Promise<void> => {
     throw new AppError(httpStatus.NOT_FOUND, "Thread not found");
   }
 
-  // Check if user is the creator
   if (thread.createdBy.toString() !== userId) {
     throw new AppError(
       httpStatus.FORBIDDEN,
@@ -295,16 +275,12 @@ const deleteThread = async (id: string, userId: string): Promise<void> => {
     );
   }
 
-  // Soft delete thread
   await Thread.findByIdAndUpdate(id, { status: "deleted" });
 
-  // Soft delete all posts in this thread
   await Post.updateMany({ threadId: id }, { status: "deleted" });
 
-  // Invalidate cache
   await invalidateThreadCache(id);
 
-  // Emit Socket.IO event to thread room and all clients
   const io = getIO();
   if (io) {
     io.emit("thread-deleted", {
@@ -319,7 +295,6 @@ const deleteThread = async (id: string, userId: string): Promise<void> => {
   }
 };
 
-// Search threads by keyword
 const searchThreads = async (
   keyword: string,
   page = 1,
@@ -366,46 +341,37 @@ const getThreadsByUser = async (
   return { threads, total };
 };
 
-// Increment post count (called when a new post is created)
 const incrementPostCount = async (threadId: string): Promise<void> => {
   await Thread.findByIdAndUpdate(threadId, {
     $inc: { postCount: 1 },
     lastActivityAt: new Date(),
   });
 
-  // Invalidate cache
   await invalidateThreadCache(threadId);
 };
 
-// Decrement post count (called when a post is deleted)
 const decrementPostCount = async (threadId: string): Promise<void> => {
   await Thread.findByIdAndUpdate(threadId, {
     $inc: { postCount: -1 },
   });
 
-  // Invalidate cache
   await invalidateThreadCache(threadId);
 };
 
-// Request thread summary (enqueue AI job)
 const requestThreadSummary = async (threadId: string): Promise<void> => {
-  // Verify thread exists
   const thread = await Thread.findById(threadId);
   if (!thread) {
     throw new AppError(httpStatus.NOT_FOUND, "Thread not found");
   }
 
-  // Import queue service dynamically to avoid circular dependencies
   const { publishAISummary } = await import("../../services/queue.service");
 
-  // Enqueue AI summary job
   await publishAISummary({
     threadId: threadId.toString(),
   });
 };
 
 const getThreadSummary = async (threadId: string): Promise<any | null> => {
-  // Verify thread exists
   const thread = await Thread.findById(threadId);
   if (!thread) {
     throw new AppError(httpStatus.NOT_FOUND, "Thread not found");

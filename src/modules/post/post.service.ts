@@ -24,7 +24,6 @@ const createPost = async (
 ): Promise<IPost> => {
 	const { threadId, parentId, content } = data;
 
-	// Verify thread exists and is not locked
 	const thread = await Thread.findOne({
 		_id: threadId,
 		status: "active",
@@ -38,7 +37,6 @@ const createPost = async (
 		throw new AppError(httpStatus.BAD_REQUEST, "Thread is locked");
 	}
 
-	// If parent post exists, verify it
 	if (parentId) {
 		const parentPost = await Post.findOne({
 			_id: parentId,
@@ -62,10 +60,8 @@ const createPost = async (
 		isEdited: false,
 	});
 
-	// Increment thread post count
 	await ThreadService.incrementPostCount(threadId);
 
-	// Extract mentions from content (e.g., @username)
 	const mentionMatches = content.match(/@(\w+)/g);
 	if (mentionMatches) {
 		const usernames = mentionMatches.map((m) => m.substring(1));
@@ -78,7 +74,6 @@ const createPost = async (
 			await post.save();
 
 			for (const mentionedUser of mentionedUsers) {
-				// Only notify if not mentioning themselves
 				if (mentionedUser._id.toString() !== userId) {
 					await NotificationService.createMentionNotification(
 						mentionedUser._id.toString(),
@@ -89,7 +84,6 @@ const createPost = async (
 					);
 				}
 
-				// Also publish to RabbitMQ for email notifications
 				await publishNotification({
 					type: "mention",
 					userId: mentionedUser._id.toString(),
@@ -101,7 +95,6 @@ const createPost = async (
 		}
 	}
 
-	// If this is a reply to another post, notify the parent post author
 	if (parentId) {
 		const parentPost = await Post.findById(parentId);
 		if (parentPost && parentPost.author.toString() !== userId) {
@@ -113,7 +106,6 @@ const createPost = async (
 				thread.title,
 			);
 
-			// Also publish to RabbitMQ for email notifications
 			await publishNotification({
 				type: "reply",
 				userId: parentPost.author.toString(),
@@ -124,14 +116,12 @@ const createPost = async (
 		}
 	}
 
-	// Publish to AI moderation queue
 	await publishAIModeration({
 		postId: post._id?.toString(),
 		content: post.content,
 		authorId: userId,
 	});
 
-	// Notify user that their post has been created
 	await NotificationService.createPostCreatedNotification(
 		userId,
 		post._id?.toString(),
@@ -139,7 +129,6 @@ const createPost = async (
 		thread.title,
 	);
 
-	// Emit Socket.IO event to thread room
 	const io = getIO();
 	if (io) {
 		const populatedPost = await Post.findById(post._id).populate(
@@ -173,7 +162,6 @@ const getPostsByThread = async (
 		.limit(limit)
 		.sort({ createdAt: 1 }); // Oldest first
 
-	// For each post, get its replies (up to 2 levels deep for performance)
 	const postsWithReplies = await Promise.all(
 		posts.map(async (post) => {
 			const replies = await getPostReplies(post._id?.toString());
@@ -212,7 +200,6 @@ const getPostReplies = async (
 		.populate("author", "name email role")
 		.sort({ createdAt: 1 });
 
-	// Recursively get replies for each reply
 	const repliesWithNested = await Promise.all(
 		replies.map(async (reply) => {
 			const nestedReplies = await getPostReplies(
@@ -262,7 +249,6 @@ const updatePost = async (
 		throw new AppError(httpStatus.NOT_FOUND, "Post not found");
 	}
 
-	// Check if user is the author
 	if (post.author.toString() !== userId) {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
@@ -270,7 +256,6 @@ const updatePost = async (
 		);
 	}
 
-	// Check if thread is locked
 	const thread = await Thread.findById(post.threadId);
 	if (thread?.isLocked) {
 		throw new AppError(httpStatus.BAD_REQUEST, "Thread is locked");
@@ -281,14 +266,12 @@ const updatePost = async (
 	post.editedAt = new Date();
 	await post.save();
 
-	// Re-run AI moderation on edited content
 	await publishAIModeration({
 		postId: post._id?.toString(),
 		content: post.content,
 		authorId: userId,
 	});
 
-	// Emit Socket.IO event to thread room
 	const io = getIO();
 	if (io) {
 		const populatedPost = await Post.findById(post._id).populate(
@@ -316,7 +299,6 @@ const deletePost = async (id: string, userId: string): Promise<void> => {
 		throw new AppError(httpStatus.NOT_FOUND, "Post not found");
 	}
 
-	// Check if user is the author
 	if (post.author.toString() !== userId) {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
@@ -324,21 +306,16 @@ const deletePost = async (id: string, userId: string): Promise<void> => {
 		);
 	}
 
-	// Store threadId before deletion for socket emit
 	const threadId = post.threadId.toString();
 	const postId = post._id?.toString();
 
-	// Soft delete post
 	post.status = "deleted";
 	await post.save();
 
-	// Decrement thread post count
 	await ThreadService.decrementPostCount(threadId);
 
-	// Soft delete all replies (recursive)
 	await deletePostReplies(id);
 
-	// Emit Socket.IO event to thread room
 	const io = getIO();
 	if (io) {
 		io.to(`thread:${threadId}`).emit("post-deleted", {
@@ -349,7 +326,6 @@ const deletePost = async (id: string, userId: string): Promise<void> => {
 	}
 };
 
-// Helper to delete all replies recursively
 const deletePostReplies = async (postId: string): Promise<void> => {
 	const replies = await Post.find({ parentId: postId, status: "active" });
 
@@ -357,10 +333,8 @@ const deletePostReplies = async (postId: string): Promise<void> => {
 		reply.status = "deleted";
 		await reply.save();
 
-		// Decrement count
 		await ThreadService.decrementPostCount(reply.threadId.toString());
 
-		// Recursively delete nested replies
 		await deletePostReplies(reply._id?.toString());
 	}
 };

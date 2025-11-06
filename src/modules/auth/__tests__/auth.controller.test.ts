@@ -1,6 +1,3 @@
-/**
- * Integration tests for Auth Controller
- */
 
 import request from 'supertest';
 import httpStatus from 'http-status';
@@ -8,7 +5,6 @@ import { createTestApp } from '../../../__tests__/utils/testApp';
 import { createTestUser, generateTestToken } from '../../../__tests__/utils/testHelpers';
 import { User } from '../../user/user.model';
 
-// Create Express app for testing
 const app = createTestApp();
 
 describe('Auth API Integration Tests', () => {
@@ -27,7 +23,6 @@ describe('Auth API Integration Tests', () => {
       expect(response.body).toHaveProperty('message');
       expect(response.body.message).toContain('Registration successful');
 
-      // Verify user was created in database
       const user = await User.findOne({ email: 'newuser@example.com' });
       expect(user).toBeDefined();
       expect(user?.name).toBe('New User');
@@ -78,7 +73,6 @@ describe('Auth API Integration Tests', () => {
 
   describe('POST /api/v1/auth/login', () => {
     beforeEach(async () => {
-      // Create a verified test user
       await createTestUser({
         name: 'Login User',
         email: 'login@example.com',
@@ -130,7 +124,6 @@ describe('Auth API Integration Tests', () => {
     });
 
     it('should return 403 for unverified email', async () => {
-      // Create unverified user
       await createTestUser({
         email: 'unverified@example.com',
         password: 'Test@1234',

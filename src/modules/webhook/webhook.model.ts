@@ -46,7 +46,6 @@ export const WebhookLog = mongoose.model<IWebhookLog>(
 	webhookLogSchema,
 );
 
-// External Webhook Configuration Schema
 const externalWebhookSchema = new Schema<IExternalWebhook>(
 	{
 		url: {

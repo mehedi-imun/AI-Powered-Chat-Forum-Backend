@@ -1,10 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { ZodError, type ZodObject, type ZodRawShape } from "zod";
 
-/**
- * Middleware to validate request body with Zod schema
- * @param zodSchema Zod schema to validate against
- */
 export const validateRequest =
 	(zodSchema: ZodObject<ZodRawShape>) =>
 	async (req: Request, _res: Response, next: NextFunction) => {

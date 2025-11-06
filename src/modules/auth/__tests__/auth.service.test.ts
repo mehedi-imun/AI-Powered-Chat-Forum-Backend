@@ -1,6 +1,3 @@
-/**
- * Unit tests for Auth Service
- */
 
 import httpStatus from 'http-status';
 import { AuthService } from '../auth.service';
@@ -9,7 +6,6 @@ import AppError from '../../../errors/AppError';
 import { emailService } from '../../../services/email.service';
 import * as jwt from '../../../utils/jwt';
 
-// Mock dependencies
 jest.mock('../../user/user.model');
 jest.mock('../../../services/email.service');
 jest.mock('../../../utils/jwt');

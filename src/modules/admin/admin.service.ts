@@ -214,7 +214,6 @@ const getAIModerationSummary = async () => {
 	const lastWeek = new Date(today);
 	lastWeek.setDate(lastWeek.getDate() - 7);
 
-	// Get posts with AI scores
 	const [
 		totalModerated,
 		moderatedToday,
@@ -224,28 +223,23 @@ const getAIModerationSummary = async () => {
 		highRiskPosts,
 		recentActions,
 	] = await Promise.all([
-		// Total posts that have been moderated by AI
 		Post.countDocuments({ aiScore: { $exists: true } }),
 
-		// Moderated today
 		Post.countDocuments({
 			aiScore: { $exists: true },
 			createdAt: { $gte: today },
 		}),
 
-		// Moderated this week
 		Post.countDocuments({
 			aiScore: { $exists: true },
 			createdAt: { $gte: lastWeek },
 		}),
 
-		// Breakdown by status
 		Post.aggregate([
 			{ $match: { aiScore: { $exists: true } } },
 			{ $group: { _id: "$moderationStatus", count: { $sum: 1 } } },
 		]),
 
-		// Average AI scores
 		Post.aggregate([
 			{ $match: { aiScore: { $exists: true } } },
 			{
@@ -258,7 +252,6 @@ const getAIModerationSummary = async () => {
 			},
 		]),
 
-		// High risk posts (any score > 0.7)
 		Post.countDocuments({
 			$or: [
 				{ "aiScore.spam": { $gt: 0.7 } },
@@ -267,7 +260,6 @@ const getAIModerationSummary = async () => {
 			],
 		}),
 
-		// Recent moderation actions (last 20)
 		Post.find({ aiScore: { $exists: true } })
 			.select(
 				"content moderationStatus aiScore aiReasoning aiRecommendation createdAt author",
@@ -465,7 +457,6 @@ const updateUser = async (
 	Object.assign(user, updateData);
 	await user.save();
 
-	// Log activity
 	await logActivity({
 		adminId: new Types.ObjectId(adminId),
 		action: "user_role_changed",
@@ -481,7 +472,6 @@ const updateUser = async (
 	return user;
 };
 
-// Ban user
 const banUser = async (userId: string, banData: IBanUser): Promise<any> => {
 	const user = await User.findById(userId);
 
@@ -493,13 +483,11 @@ const banUser = async (userId: string, banData: IBanUser): Promise<any> => {
 		throw new AppError(httpStatus.BAD_REQUEST, "User is already banned");
 	}
 
-	// Check if already banned
 	const existingBan = await Ban.findOne({ userId, isActive: true });
 	if (existingBan) {
 		throw new AppError(httpStatus.BAD_REQUEST, "User is already banned");
 	}
 
-	// Deactivate user
 	user.isActive = false;
 	await user.save();
 
@@ -515,7 +503,6 @@ const banUser = async (userId: string, banData: IBanUser): Promise<any> => {
 		isActive: true,
 	});
 
-	// Log activity
 	await logActivity({
 		adminId: banData.bannedBy,
 		action: "user_banned",
@@ -531,7 +518,6 @@ const banUser = async (userId: string, banData: IBanUser): Promise<any> => {
 	return ban;
 };
 
-// Unban user
 const unbanUser = async (userId: string, adminId: string): Promise<any> => {
 	const user = await User.findById(userId);
 
@@ -539,21 +525,17 @@ const unbanUser = async (userId: string, adminId: string): Promise<any> => {
 		throw new AppError(httpStatus.NOT_FOUND, "User not found");
 	}
 
-	// Find active ban
 	const ban = await Ban.findOne({ userId, isActive: true });
 	if (!ban) {
 		throw new AppError(httpStatus.BAD_REQUEST, "User is not banned");
 	}
 
-	// Activate user
 	user.isActive = true;
 	await user.save();
 
-	// Deactivate ban
 	ban.isActive = false;
 	await ban.save();
 
-	// Log activity
 	await logActivity({
 		adminId: new Types.ObjectId(adminId),
 		action: "user_unbanned",
@@ -568,7 +550,6 @@ const unbanUser = async (userId: string, adminId: string): Promise<any> => {
 };
 
 const createReport = async (reportData: IReportCreate): Promise<any> => {
-	// Validate reported content exists
 	let contentExists = false;
 
 	switch (reportData.reportedContentType) {
@@ -587,7 +568,6 @@ const createReport = async (reportData: IReportCreate): Promise<any> => {
 		throw new AppError(httpStatus.NOT_FOUND, "Reported content not found");
 	}
 
-	// Check for duplicate reports
 	const existingReport = await Report.findOne({
 		reportedContentType: reportData.reportedContentType,
 		reportedContentId: reportData.reportedContentId,
@@ -653,7 +633,6 @@ const getReportById = async (reportId: string): Promise<any> => {
 		throw new AppError(httpStatus.NOT_FOUND, "Report not found");
 	}
 
-	// Populate reported content
 	let reportedContent = null;
 
 	switch (report.reportedContentType) {
@@ -681,7 +660,6 @@ const getReportById = async (reportId: string): Promise<any> => {
 	};
 };
 
-// Take action on report
 const takeReportAction = async (actionData: IReportAction): Promise<any> => {
 	const { reportId, action, resolution, reviewNote, reviewedBy } = actionData;
 
@@ -706,7 +684,6 @@ const takeReportAction = async (actionData: IReportAction): Promise<any> => {
 	if (action === "resolve" && resolution) {
 		report.resolution = resolution;
 
-		// Take action based on resolution
 		switch (resolution) {
 			case "content_removed":
 				await removeContent(
@@ -720,13 +697,11 @@ const takeReportAction = async (actionData: IReportAction): Promise<any> => {
 					bannedBy: new Types.ObjectId(reviewedBy),
 				});
 				break;
-			// user_warned and no_action don't require automatic actions
 		}
 	}
 
 	await report.save();
 
-	// Log activity
 	await logActivity({
 		adminId: new Types.ObjectId(reviewedBy),
 		action: "report_resolved",
@@ -742,7 +717,6 @@ const takeReportAction = async (actionData: IReportAction): Promise<any> => {
 	return report;
 };
 
-// Helper: Remove content
 const removeContent = async (
 	contentType: string,
 	contentId: string,
@@ -757,7 +731,6 @@ const removeContent = async (
 	}
 };
 
-// Log admin activity
 const logActivity = async (logData: IActivityLogCreate): Promise<void> => {
 	await ActivityLog.create(logData);
 };
@@ -819,7 +792,6 @@ const updateSystemSettings = async (
 		await settings.save();
 	}
 
-	// Log activity
 	await logActivity({
 		adminId: new Types.ObjectId(adminId),
 		action: "settings_updated",
@@ -830,33 +802,27 @@ const updateSystemSettings = async (
 };
 
 export const AdminService = {
-	// Dashboard
 	getDashboardStats,
 	getUserStats,
 	getThreadStats,
 	getPostStats,
 	getAIModerationSummary,
 
-	// User Management
 	getAllUsers,
 	updateUser,
 	banUser,
 	unbanUser,
 
-	// Content Management
 	getAllPosts,
 	getAllThreads,
 
-	// Content Moderation
 	createReport,
 	getAllReports,
 	getReportById,
 	takeReportAction,
 
-	// Activity Logs
 	getActivityLogs,
 
-	// System Settings
 	getSystemSettings,
 	updateSystemSettings,
 };

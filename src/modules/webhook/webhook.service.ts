@@ -127,7 +127,6 @@ class WebhookService {
 				msg: `Notification webhook received: ${data.event}`,
 			});
 
-			// Trigger external webhooks
 			await this.triggerExternalWebhooks(data.event, data as unknown as Record<string, unknown>);
 
 			return {

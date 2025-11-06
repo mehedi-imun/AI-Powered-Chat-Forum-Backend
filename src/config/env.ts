@@ -2,51 +2,41 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Define the shape of the environment configuration
 interface EnvConfig {
 	PORT: string;
 	DATABASE_URL: string;
 	FRONTEND_URL: string;
 	NODE_ENV: "development" | "production" | "test";
 
-	// JWT
 	JWT_SECRET: string;
 	JWT_EXPIRES_IN: string;
 	JWT_REFRESH_SECRET: string;
 	JWT_REFRESH_EXPIRES_IN: string;
 
-	// Redis
 	REDIS_URL: string;
 
-	// RabbitMQ
 	RABBITMQ_URL: string;
 
-	// Email
 	SMTP_HOST: string;
 	SMTP_PORT: number;
 	SMTP_USER: string;
 	SMTP_PASSWORD: string;
 	EMAIL_FROM: string;
 
-	// Rate Limiting
 	RATE_LIMIT_WINDOW_MS: number;
 	RATE_LIMIT_MAX_REQUESTS: number;
 
-	// AI (OpenAI)
 	OPENAI_API_KEY?: string;
 	AI_MODEL?: string;
 
-	// AI (OpenRouter)
 	OPENROUTER_API_KEY?: string;
 	OPENROUTER_MODEL?: string;
 	SITE_URL?: string;
 	SITE_NAME?: string;
 
-	// Webhook
 	WEBHOOK_SECRET?: string;
 }
 
-// Function to load environment variables and validate their existence
 const loadEnvVariables = (): EnvConfig => {
 	const requiredEnvVars: string[] = [
 		"NODE_ENV",
@@ -78,7 +68,6 @@ const loadEnvVariables = (): EnvConfig => {
 		}
 	});
 
-	// Return the validated environment variables
 	return {
 		PORT: process.env.PORT!,
 		DATABASE_URL: process.env.DATABASE_URL!,
@@ -115,8 +104,6 @@ const loadEnvVariables = (): EnvConfig => {
 	};
 };
 
-// Call the function to load and validate the environment variables
 const env = loadEnvVariables();
 
-// Export the validated environment variables
 export default env;

@@ -1,3 +1,4 @@
+import logger from "../../utils/logger";
 import httpStatus from "http-status";
 import env from "../../config/env";
 import { cacheService } from "../../config/redis";
@@ -14,7 +15,6 @@ import { User } from "../user/user.model";
 import type { IUser } from "../user/user.interface";
 import type { ILoginResponse, IRefreshTokenResponse } from "./auth.interface";
 
-// Login user
 const login = async (
 	email: string,
 	password: string,
@@ -65,7 +65,6 @@ const login = async (
 	};
 };
 
-// Refresh access token
 const refreshAccessToken = async (
 	refreshToken: string,
 ): Promise<IRefreshTokenResponse> => {
@@ -93,7 +92,6 @@ const refreshAccessToken = async (
 	}
 };
 
-// Register new user
 const register = async (
 	name: string,
 	email: string,
@@ -107,7 +105,6 @@ const register = async (
 		);
 	}
 
-	// Generate email verification token
 	const verificationToken = generatePasswordResetToken();
 	const hashedToken = hashResetToken(verificationToken);
 
@@ -121,13 +118,12 @@ const register = async (
 		emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
 	});
 
-	// Send verification email
 	const verificationUrl = `${env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-	console.log(`📧 Sending verification email to ${user.email}`);
-	console.log(`🔗 Verification URL: ${verificationUrl}`);
+	logger.info(`📧 Sending verification email to ${user.email}`);
+	logger.info(`🔗 Verification URL: ${verificationUrl}`);
 	emailService
 		.sendEmailVerification(user.email, user.name, verificationUrl)
-		.catch((err) => console.error("Failed to send verification email:", err));
+		.catch((err) => logger.error("Failed to send verification email"));
 
 	return {
 		message:
@@ -138,7 +134,6 @@ const register = async (
 	};
 };
 
-// Request password reset
 const forgotPassword = async (email: string): Promise<{ message: string }> => {
 	const user = await User.findOne({ email });
 	if (!user) {
@@ -155,7 +150,7 @@ const forgotPassword = async (email: string): Promise<{ message: string }> => {
 
 	emailService
 		.sendPasswordResetEmail(user.email, resetToken, user.name)
-		.catch((err) => console.error("Failed to send password reset email:", err));
+		.catch((err) => logger.error("Failed to send password reset email"));
 
 	return {
 		message:
@@ -163,7 +158,6 @@ const forgotPassword = async (email: string): Promise<{ message: string }> => {
 	};
 };
 
-// Reset password with token
 const resetPassword = async (
 	token: string,
 	newPassword: string,
@@ -192,7 +186,6 @@ const resetPassword = async (
 	};
 };
 
-// Change password (for logged-in users)
 const changePassword = async (
 	userId: string,
 	currentPassword: string,
@@ -219,7 +212,6 @@ const changePassword = async (
 	};
 };
 
-// Verify email with token and auto-login
 const verifyEmail = async (
 	token: string,
 ): Promise<{
@@ -248,7 +240,6 @@ const verifyEmail = async (
 	user.lastLoginAt = new Date();
 	await user.save();
 
-	// Generate tokens for auto-login
 	const accessToken = generateAccessToken({
 		userId: user._id.toString(),
 		email: user.email,
@@ -261,7 +252,6 @@ const verifyEmail = async (
 		role: user.role,
 	});
 
-	// Store refresh token in Redis
 	await cacheService.set(
 		`refreshToken:${user._id}`,
 		refreshToken,

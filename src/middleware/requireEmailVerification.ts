@@ -2,10 +2,6 @@ import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import AppError from "../errors/AppError";
 
-/**
- * Middleware to check if user's email is verified
- * Should be used after authenticate middleware
- */
 const requireEmailVerification = (
 	req: Request,
 	_res: Response,

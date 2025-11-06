@@ -1,3 +1,4 @@
+import logger from "../utils/logger";
 import Redis from "ioredis";
 import env from "./env";
 
@@ -19,20 +20,20 @@ export const connectRedis = (): Redis => {
 		});
 
 		redisClient.on("connect", () => {
-			console.log("✅ Redis connected successfully");
+			logger.info("✅ Redis connected successfully");
 		});
 
 		redisClient.on("error", (err) => {
-			console.error("❌ Redis connection error:", err.message);
+			logger.error("❌ Redis connection error");
 		});
 
 		redisClient.on("ready", () => {
-			console.log("✅ Redis is ready to accept commands");
+			logger.info("✅ Redis is ready to accept commands");
 		});
 
 		return redisClient;
 	} catch (error) {
-		console.error("❌ Failed to connect to Redis:", error);
+		logger.error("❌ Failed to connect to Redis");
 		throw error;
 	}
 };
@@ -44,19 +45,18 @@ export const getRedisClient = (): Redis | null => {
 export const disconnectRedis = async (): Promise<void> => {
 	if (redisClient) {
 		await redisClient.quit();
-		console.log("✅ Redis disconnected successfully");
+		logger.info("✅ Redis disconnected successfully");
 		redisClient = null;
 	}
 };
 
-// Cache utility functions
 export const cacheService = {
 	async get(key: string): Promise<string | null> {
 		if (!redisClient) return null;
 		try {
 			return await redisClient.get(key);
 		} catch (error) {
-			console.error("Redis GET error:", error);
+			logger.error("Redis GET error");
 			return null;
 		}
 	},
@@ -71,7 +71,7 @@ export const cacheService = {
 			}
 			return true;
 		} catch (error) {
-			console.error("Redis SET error:", error);
+			logger.error("Redis SET error");
 			return false;
 		}
 	},
@@ -82,7 +82,7 @@ export const cacheService = {
 			await redisClient.del(key);
 			return true;
 		} catch (error) {
-			console.error("Redis DEL error:", error);
+			logger.error("Redis DEL error");
 			return false;
 		}
 	},
@@ -93,7 +93,7 @@ export const cacheService = {
 			const result = await redisClient.exists(key);
 			return result === 1;
 		} catch (error) {
-			console.error("Redis EXISTS error:", error);
+			logger.error("Redis EXISTS error");
 			return false;
 		}
 	},
@@ -112,7 +112,7 @@ export const cacheService = {
 		try {
 			return JSON.parse(value) as T;
 		} catch (error) {
-			console.error("Redis JSON parse error:", error);
+			logger.error("Redis JSON parse error");
 			return null;
 		}
 	},

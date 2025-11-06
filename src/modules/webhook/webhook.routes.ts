@@ -12,7 +12,6 @@ import { authorize } from "../../middleware/authorize";
 
 const router = express.Router();
 
-// Incoming webhook endpoints (from external services)
 router.post(
 	"/email-status",
 	validateRequest(emailStatusWebhookSchema),
@@ -25,7 +24,6 @@ router.post(
 	WebhookController.handleNotificationWebhook,
 );
 
-// Webhook logs (Admin only)
 router.get(
 	"/logs",
 	authenticate,
@@ -33,7 +31,6 @@ router.get(
 	WebhookController.getWebhookLogs,
 );
 
-// External webhook management (Admin only)
 router.post(
 	"/external",
 	authenticate,

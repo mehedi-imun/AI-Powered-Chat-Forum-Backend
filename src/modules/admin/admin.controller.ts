@@ -120,7 +120,6 @@ const banUser = catchAsync(async (req, res) => {
 	});
 });
 
-// Unban user
 const unbanUser = catchAsync(async (req, res) => {
 	const { userId } = req.params;
 	const adminId = req.user?.userId;
