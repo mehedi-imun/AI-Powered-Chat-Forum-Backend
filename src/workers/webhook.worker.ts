@@ -88,7 +88,7 @@ async function sendWebhook(
 
 export async function startWebhookWorker() {
   try {
-    logger.info("📨 Starting Webhook Worker...");
+    logger.info(" Starting Webhook Worker...");
 
     await queueService.consumeQueue(
       QUEUES.WEBHOOKS,
@@ -191,7 +191,7 @@ export async function startWebhookWorker() {
       }
     );
 
-    logger.info("✅ Webhook Worker started successfully");
+    logger.info("Webhook Worker started successfully");
   } catch (error) {
     logger.error({
       error,

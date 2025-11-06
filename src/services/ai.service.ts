@@ -12,7 +12,7 @@ const callOpenRouter = async (
 
   try {
     logger.info(
-      `🔄 Calling OpenRouter API with model: ${env.OPENROUTER_MODEL}`
+      `Calling OpenRouter API with model: ${env.OPENROUTER_MODEL}`
     );
 
     const response = await fetch(
@@ -34,11 +34,11 @@ const callOpenRouter = async (
       }
     );
 
-    logger.info(`📡 OpenRouter response status: ${response.status}`);
+    logger.info(`OpenRouter response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error("❌ OpenRouter API error response");
+      logger.error("OpenRouter API error response");
       throw new Error(
         `OpenRouter API error: ${response.status} - ${errorText}`
       );
@@ -46,18 +46,18 @@ const callOpenRouter = async (
 
     const data = await response.json();
     logger.info(
-      "📥 OpenRouter data received, choices:",
+      "OpenRouter data received, choices:",
       data.choices?.length || 0
     );
 
     const content = data.choices[0]?.message?.content || "";
     if (!content) {
-      logger.error("⚠️ Empty response from OpenRouter");
+      logger.error("Empty response from OpenRouter");
     }
 
     return content;
   } catch (error) {
-    logger.error("❌ OpenRouter API request failed");
+    logger.error("OpenRouter API request failed");
     throw error;
   }
 };
@@ -86,7 +86,7 @@ export const moderateContent = async (
   try {
     if (!env.OPENROUTER_API_KEY) {
       logger.warn(
-        "⚠️  OpenRouter API key not configured, using mock moderation"
+        "OpenRouter API key not configured, using mock moderation"
       );
       return mockModeration(content);
     }
@@ -128,7 +128,7 @@ Respond in JSON format:
     );
 
     logger.info({
-      msg: "🤖 OpenRouter response",
+      msg: "OpenRouter response",
       response: responseText.substring(0, 200),
     });
 
@@ -152,7 +152,7 @@ Respond in JSON format:
       reasoning: result.reasoning,
     };
   } catch (error) {
-    logger.error("❌ AI moderation error");
+    logger.error("AI moderation error");
     return mockModeration(content);
   }
 };
@@ -162,7 +162,7 @@ export const generateThreadSummary = async (
 ): Promise<ISummaryResult> => {
   try {
     if (!env.OPENROUTER_API_KEY) {
-      logger.warn("⚠️  OpenRouter API key not configured, using mock summary");
+      logger.warn("OpenRouter API key not configured, using mock summary");
       return mockSummary(posts);
     }
 
@@ -206,7 +206,7 @@ Respond in JSON format:
     );
 
     logger.info({
-      msg: "🤖 OpenRouter summary response",
+      msg: "OpenRouter summary response",
       response: responseText.substring(0, 200),
     });
 
@@ -226,14 +226,14 @@ Respond in JSON format:
       sentimentScore: result.sentimentScore,
     };
   } catch (error) {
-    logger.error("❌ AI summary error");
+    logger.error("AI summary error");
     return mockSummary(posts);
   }
 };
 
 const mockModeration = (content: string): IModerationResult => {
   if (!content) {
-    logger.error("❌ Mock moderation received undefined content");
+    logger.error("Mock moderation received undefined content");
     return {
       isSpam: false,
       isToxic: false,

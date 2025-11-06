@@ -7,23 +7,23 @@ import { AIService } from "../services/ai.service";
 import { queueService } from "../services/queue.service";
 
 export const startAISummaryWorker = async (): Promise<void> => {
-  logger.info("📝 Starting AI Summary Worker...");
+  logger.info("Starting AI Summary Worker...");
 
   await queueService.consumeQueue(
     QUEUES.AI_SUMMARY,
     async (message: any) => {
       try {
         logger.info(
-          `📦 Raw summary message: ${JSON.stringify(message, null, 2)}`
+          `Raw summary message: ${JSON.stringify(message, null, 2)}`
         );
 
         const { threadId } = message;
 
-        logger.info(`📊 Generating summary for thread: ${threadId}`);
+        logger.info(`Generating summary for thread: ${threadId}`);
 
         const thread = await Thread.findById(threadId);
         if (!thread) {
-          logger.error(`❌ Thread not found: ${threadId}`);
+          logger.error(`Thread not found: ${threadId}`);
           return;
         }
 
@@ -38,7 +38,7 @@ export const startAISummaryWorker = async (): Promise<void> => {
           .lean();
 
         if (posts.length === 0) {
-          logger.info(`⚠️  No posts found for thread ${threadId}`);
+          logger.info(`No posts found for thread ${threadId}`);
           return;
         }
 
@@ -55,14 +55,14 @@ export const startAISummaryWorker = async (): Promise<void> => {
         const cacheKey = `thread:summary:${threadId}`;
         await cacheService.setJSON(cacheKey, summaryResult, 3600);
 
-        logger.info(`✅ Summary generated for thread ${threadId}`);
+        logger.info(`Summary generated for thread ${threadId}`);
         logger.info(
           `   Summary: ${summaryResult.summary.substring(0, 100)}...`
         );
         logger.info(`   Key Points: ${summaryResult.keyPoints.length}`);
         logger.info(`   Sentiment: ${summaryResult.sentimentScore}`);
       } catch (error: any) {
-        logger.error("❌ AI Summary Worker error");
+        logger.error("AI Summary Worker error");
         throw error; // Re-throw to trigger retry
       }
     },
@@ -71,9 +71,9 @@ export const startAISummaryWorker = async (): Promise<void> => {
     }
   );
 
-  logger.info("✅ AI Summary Worker started");
+  logger.info("AI Summary Worker started");
 };
 
 export const stopAISummaryWorker = async (): Promise<void> => {
-  logger.info("⏹️  Stopping AI Summary Worker...");
+  logger.info("Stopping AI Summary Worker...");
 };

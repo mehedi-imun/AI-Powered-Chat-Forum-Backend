@@ -17,7 +17,7 @@ let server: Server | null = null;
 async function startServer() {
 	try {
 		await mongoose.connect(env.DATABASE_URL);
-		logger.info("✅ MongoDB connected successfully");
+		logger.info("MongoDB connected successfully");
 
 		try {
 			connectRedis();
@@ -26,7 +26,7 @@ async function startServer() {
 				{
 					error: redisError,
 				},
-				"⚠️  Redis connection failed, continuing without cache",
+				"Redis connection failed, continuing without cache",
 			);
 		}
 
@@ -36,11 +36,11 @@ async function startServer() {
 			await startAISummaryWorker();
 			await startNotificationWorker();
 			await startWebhookWorker();
-			logger.info("✅ Workers started successfully (AI Moderation, AI Summary, Notification, Webhook)");
+			logger.info("Workers started successfully (AI Moderation, AI Summary, Notification, Webhook)");
 		} catch (rabbitMQError) {
 			logger.warn(
 				{ error: rabbitMQError },
-				"⚠️  RabbitMQ connection failed, continuing without queue",
+				"RabbitMQ connection failed, continuing without queue",
 			);
 		}
 
@@ -49,12 +49,12 @@ async function startServer() {
 		initializeCronJobs();
 
 		server.listen(env.PORT, () => {
-			logger.info(`🚀 Server is running on port ${env.PORT}`);
-			logger.info(`📝 Environment: ${env.NODE_ENV}`);
-			logger.info(`🌐 API URL: http://localhost:${env.PORT}`);
+			logger.info(` Server is running on port ${env.PORT}`);
+			logger.info(`Environment: ${env.NODE_ENV}`);
+			logger.info(` API URL: http://localhost:${env.PORT}`);
 		});
 	} catch (err) {
-		logger.error({ err }, "❌ Failed to start server");
+		logger.error({ err }, "Failed to start server");
 		process.exit(1);
 	}
 }

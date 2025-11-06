@@ -20,20 +20,20 @@ export const connectRedis = (): Redis => {
 		});
 
 		redisClient.on("connect", () => {
-			logger.info("✅ Redis connected successfully");
+			logger.info("Redis connected successfully");
 		});
 
 		redisClient.on("error", (err) => {
-			logger.error("❌ Redis connection error");
+			logger.error("Redis connection error");
 		});
 
 		redisClient.on("ready", () => {
-			logger.info("✅ Redis is ready to accept commands");
+			logger.info("Redis is ready to accept commands");
 		});
 
 		return redisClient;
 	} catch (error) {
-		logger.error("❌ Failed to connect to Redis");
+		logger.error("Failed to connect to Redis");
 		throw error;
 	}
 };
@@ -45,7 +45,7 @@ export const getRedisClient = (): Redis | null => {
 export const disconnectRedis = async (): Promise<void> => {
 	if (redisClient) {
 		await redisClient.quit();
-		logger.info("✅ Redis disconnected successfully");
+		logger.info("Redis disconnected successfully");
 		redisClient = null;
 	}
 };

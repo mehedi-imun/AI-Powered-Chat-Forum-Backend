@@ -88,10 +88,10 @@ app.use(
     },
     customSuccessMessage: (req: express.Request, res: express.Response) => {
       const responseTime = res.locals.responseTime || "N/A";
-      return `🌐 ${req.method} ${req.url} → ${res.statusCode} (${responseTime}ms)`;
+      return ` ${req.method} ${req.url} → ${res.statusCode} (${responseTime}ms)`;
     },
     customErrorMessage: (req, res, err) => {
-      return `❌ ${req.method} ${req.url} → ${res.statusCode} - ${err.message}`;
+      return `${req.method} ${req.url} → ${res.statusCode} - ${err.message}`;
     },
     serializers: {
       req: () => undefined,

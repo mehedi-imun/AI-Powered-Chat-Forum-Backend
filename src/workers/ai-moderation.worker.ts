@@ -12,23 +12,23 @@ import {
 } from "../services/queue.service";
 
 export const startAIModerationWorker = async (): Promise<void> => {
-  logger.info("🤖 Starting AI Moderation Worker...");
+  logger.info("Starting AI Moderation Worker...");
 
   await queueService.consumeQueue(
     QUEUES.AI_MODERATION,
     async (message: AIModerationQueueData) => {
       try {
-        logger.info(`📦 Received message: ${JSON.stringify(message, null, 2)}`);
+        logger.info(`Received message: ${JSON.stringify(message, null, 2)}`);
 
         const { postId, content, authorId } = message;
 
-        logger.info(`🔍 Moderating post: ${postId}`);
+        logger.info(`Moderating post: ${postId}`);
 
         const moderationResult = await AIService.moderateContent(content);
 
         const post = await Post.findById(postId);
         if (!post) {
-          logger.error(`❌ Post not found: ${postId}`);
+          logger.error(`Post not found: ${postId}`);
           return;
         }
 
@@ -73,7 +73,7 @@ export const startAIModerationWorker = async (): Promise<void> => {
         } else if (moderationResult.recommendation === "review") {
           post.moderationStatus = "flagged";
           logger.info(
-            `⚠️  Post ${postId} flagged for review: ${moderationResult.reasoning}`
+            `Post ${postId} flagged for review: ${moderationResult.reasoning}`
           );
 
           await Report.create({
@@ -101,18 +101,18 @@ export const startAIModerationWorker = async (): Promise<void> => {
           }
         } else {
           post.moderationStatus = "approved";
-          logger.info(`✅ Post ${postId} approved by AI`);
+          logger.info(`Post ${postId} approved by AI`);
         }
 
         await post.save();
 
         logger.info(
-          `✅ Moderation complete for post ${postId}: ${moderationResult.recommendation}`
+          `Moderation complete for post ${postId}: ${moderationResult.recommendation}`
         );
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
-        logger.error("❌ AI Moderation Worker error");
+        logger.error("AI Moderation Worker error");
         throw error;
       }
     },
@@ -121,9 +121,9 @@ export const startAIModerationWorker = async (): Promise<void> => {
     }
   );
 
-  logger.info("✅ AI Moderation Worker started");
+  logger.info("AI Moderation Worker started");
 };
 
 export const stopAIModerationWorker = async (): Promise<void> => {
-  logger.info("⏹️  Stopping AI Moderation Worker...");
+  logger.info("Stopping AI Moderation Worker...");
 };

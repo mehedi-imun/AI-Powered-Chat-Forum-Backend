@@ -297,7 +297,7 @@ const createThreadCreatedNotification = async (
 		relatedThreadId: threadId,
 	});
 	logger.info(
-		`✅ Thread notification created with ID: ${notification._id}`,
+		`Thread notification created with ID: ${notification._id}`,
 	);
 };
 

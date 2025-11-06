@@ -64,7 +64,7 @@ export const initializeCronJobs = (): void => {
 };
 
 export const stopAllCronJobs = (): void => {
-	logger.info("⏹  Stopping all cron jobs...");
+	logger.info("Stopping all cron jobs...");
 	jobs.forEach((job, name) => {
 		job.stop();
 		logger.info(`Stopped job: ${name}`);
@@ -78,9 +78,9 @@ export const stopCronJob = (jobName: string): void => {
 	if (job) {
 		job.stop();
 		jobs.delete(jobName);
-		logger.info(`✅ Cron job stopped: ${jobName}`);
+		logger.info(`Cron job stopped: ${jobName}`);
 	} else {
-		logger.warn(`⚠️  Cron job not found: ${jobName}`);
+		logger.warn(`Cron job not found: ${jobName}`);
 	}
 };
 

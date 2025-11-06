@@ -17,11 +17,11 @@ export const connectRabbitMQ = async (): Promise<void> => {
   try {
     const conn = await amqp.connect(env.RABBITMQ_URL);
     connection = conn;
-    logger.info("✅ RabbitMQ connected successfully");
+    logger.info("RabbitMQ connected successfully");
 
     const ch = await conn.createChannel();
     channel = ch;
-    logger.info("✅ RabbitMQ channel created");
+    logger.info("RabbitMQ channel created");
 
     await Promise.all([
       ch.assertQueue(QUEUES.NOTIFICATIONS, { durable: true }),
@@ -32,18 +32,18 @@ export const connectRabbitMQ = async (): Promise<void> => {
     ]);
 
     logger.info(
-      `✅ RabbitMQ queues declared: ${Object.values(QUEUES).join(", ")}`
+      `RabbitMQ queues declared: ${Object.values(QUEUES).join(", ")}`
     );
 
     conn.on("error", (err: Error) => {
-      logger.error("❌ RabbitMQ connection error");
+      logger.error("RabbitMQ connection error");
     });
 
     conn.on("close", () => {
-      logger.warn("⚠️  RabbitMQ connection closed");
+      logger.warn("RabbitMQ connection closed");
     });
   } catch (error) {
-    logger.error("❌ Failed to connect to RabbitMQ");
+    logger.error("Failed to connect to RabbitMQ");
     throw error;
   }
 };
@@ -60,14 +60,14 @@ export const disconnectRabbitMQ = async (): Promise<void> => {
   try {
     if (channel) {
       await channel.close();
-      logger.info("✅ RabbitMQ channel closed");
+      logger.info("RabbitMQ channel closed");
     }
     if (connection) {
       await connection.close();
-      logger.info("✅ RabbitMQ disconnected successfully");
+      logger.info("RabbitMQ disconnected successfully");
     }
   } catch (error) {
-    logger.error("❌ Error disconnecting RabbitMQ");
+    logger.error("Error disconnecting RabbitMQ");
   } finally {
     channel = null;
     connection = null;
@@ -107,7 +107,7 @@ export const queueService = {
           channel?.ack(msg); // Acknowledge successful processing
         } catch (error) {
           logger.error(
-            `❌ Error processing message from ${queueName}: ${error}`
+            `Error processing message from ${queueName}: ${error}`
           );
           channel?.nack(msg, false, true);
         }

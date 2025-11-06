@@ -19,14 +19,14 @@ interface NotificationJob {
 }
 
 export const startNotificationWorker = async (): Promise<void> => {
-  logger.info("🔔 Starting Notification Worker...");
+  logger.info("Starting Notification Worker...");
 
   await queueService.consumeQueue(
     QUEUES.NOTIFICATIONS,
     async (message: NotificationJob) => {
       try {
         logger.info(
-          `📦 Received notification job: ${JSON.stringify(message, null, 2)}`
+          `Received notification job: ${JSON.stringify(message, null, 2)}`
         );
 
         const { type, userId, postId, threadId } = message;
@@ -178,14 +178,14 @@ export const startNotificationWorker = async (): Promise<void> => {
             break;
 
           default:
-            logger.warn(`⚠️  Unknown notification type: ${type}`);
+            logger.warn(`Unknown notification type: ${type}`);
         }
 
-        logger.info(`✅ Notification processed: ${type} for user ${userId}`);
+        logger.info(`Notification processed: ${type} for user ${userId}`);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        logger.error("❌ Notification Worker error");
+        logger.error("Notification Worker error");
         throw error;
       }
     },
@@ -194,9 +194,9 @@ export const startNotificationWorker = async (): Promise<void> => {
     }
   );
 
-  logger.info("✅ Notification Worker started");
+  logger.info("Notification Worker started");
 };
 
 export const stopNotificationWorker = async (): Promise<void> => {
-  logger.info("⏹️  Stopping Notification Worker...");
+  logger.info("Stopping Notification Worker...");
 };

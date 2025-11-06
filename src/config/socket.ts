@@ -37,13 +37,13 @@ export const initializeSocketIO = (httpServer: HTTPServer): SocketIOServer => {
 
   io.on("connection", (socket: Socket) => {
     const userId = (socket as any).userId;
-    logger.info(`✅ Socket connected: ${socket.id} (User: ${userId})`);
+    logger.info(`Socket connected: ${socket.id} (User: ${userId})`);
 
     socket.join(`user:${userId}`);
 
     socket.on("thread:join", (threadId: string) => {
       socket.join(`thread:${threadId}`);
-      logger.info(`👤 User ${userId} joined thread: ${threadId}`);
+      logger.info(`User ${userId} joined thread: ${threadId}`);
       socket.to(`thread:${threadId}`).emit("user:joined", {
         userId,
         threadId,
@@ -53,7 +53,7 @@ export const initializeSocketIO = (httpServer: HTTPServer): SocketIOServer => {
 
     socket.on("thread:leave", (threadId: string) => {
       socket.leave(`thread:${threadId}`);
-      logger.info(`👤 User ${userId} left thread: ${threadId}`);
+      logger.info(`User ${userId} left thread: ${threadId}`);
       socket.to(`thread:${threadId}`).emit("user:left", {
         userId,
         threadId,
@@ -74,7 +74,7 @@ export const initializeSocketIO = (httpServer: HTTPServer): SocketIOServer => {
     );
 
     socket.on("disconnect", () => {
-      logger.info(`❌ Socket disconnected: ${socket.id} (User: ${userId})`);
+      logger.info(`Socket disconnected: ${socket.id} (User: ${userId})`);
     });
 
     socket.on("error", (error) => {
@@ -82,7 +82,7 @@ export const initializeSocketIO = (httpServer: HTTPServer): SocketIOServer => {
     });
   });
 
-  logger.info("✅ Socket.IO server initialized");
+  logger.info("Socket.IO server initialized");
   return io;
 };
 

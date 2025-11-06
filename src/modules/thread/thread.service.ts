@@ -75,16 +75,16 @@ const createThread = async (
 
   try {
     logger.info(
-      `🔔 Creating thread notification for user ${userId}, thread ${thread._id}, title: ${thread.title}`
+      `Creating thread notification for user ${userId}, thread ${thread._id}, title: ${thread.title}`
     );
     await NotificationService.createThreadCreatedNotification(
       userId,
       thread._id?.toString(),
       thread.title
     );
-    logger.info("✅ Thread notification created successfully");
+    logger.info("Thread notification created successfully");
   } catch (error) {
-    logger.error("❌ Failed to create thread notification");
+    logger.error("Failed to create thread notification");
   }
 
   const io = getIO();

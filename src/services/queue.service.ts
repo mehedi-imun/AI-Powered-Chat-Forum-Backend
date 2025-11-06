@@ -107,7 +107,7 @@ export class QueueService {
       }
 
       this.channel.prefetch(options?.prefetch ?? 1);
-      logger.info(`👂 Listening to queue: ${queueName}`);
+      logger.info(`Listening to queue: ${queueName}`);
 
       await this.channel.consume(
         queueName,
@@ -116,11 +116,11 @@ export class QueueService {
 
           try {
             const content: QueueMessage<T> = JSON.parse(msg.content.toString());
-            logger.info(`📥 Processing message from queue: ${queueName}`);
+            logger.info(`Processing message from queue: ${queueName}`);
 
             await handler(content.data, msg);
             this.channel?.ack(msg);
-            logger.info(`✅ Message processed from queue: ${queueName}`);
+            logger.info(`Message processed from queue: ${queueName}`);
           } catch (error) {
             logger.error(`Error processing message from ${queueName}:`);
 
@@ -129,12 +129,12 @@ export class QueueService {
 
             if (retryCount < maxRetries) {
               logger.info(
-                `♻️  Requeuing message (attempt ${retryCount}/${maxRetries})`
+                `♻Requeuing message (attempt ${retryCount}/${maxRetries})`
               );
               this.channel?.nack(msg, false, true);
             } else {
               logger.error(
-                `❌ Message failed after ${maxRetries} attempts, rejecting`
+                `Message failed after ${maxRetries} attempts, rejecting`
               );
               this.channel?.nack(msg, false, false);
             }
@@ -161,7 +161,7 @@ export class QueueService {
       throw new Error("RabbitMQ channel not available");
     }
     await this.channel.purgeQueue(queueName);
-    logger.info(`🗑️  Queue purged: ${queueName}`);
+    logger.info(`Queue purged: ${queueName}`);
   }
 
   async getQueueMessageCount(queueName: string): Promise<number> {

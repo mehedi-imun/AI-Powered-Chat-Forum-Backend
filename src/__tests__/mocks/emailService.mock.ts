@@ -1,6 +1,3 @@
-/**
- * Mock email service for testing
- */
 
 export const emailService = {
   sendEmailVerification: jest.fn().mockResolvedValue(undefined),

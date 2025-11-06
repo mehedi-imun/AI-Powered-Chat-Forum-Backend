@@ -22,9 +22,9 @@ class EmailService {
   private async verifyConnection() {
     try {
       await this.transporter.verify();
-      logger.info("✅ Email service ready");
+      logger.info("Email service ready");
     } catch (error) {
-      logger.warn("⚠️  Email service unavailable (check SMTP credentials)");
+      logger.warn("Email service unavailable (check SMTP credentials)");
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       logger.error("Email error");
@@ -54,7 +54,7 @@ class EmailService {
                             </div>
         `,
       });
-      logger.info(`📧 Verification email sent to ${to}`);
+      logger.info(`Verification email sent to ${to}`);
     } catch (error) {
       logger.error("Error sending verification email");
       throw error;
@@ -88,7 +88,7 @@ class EmailService {
           </div>
         `,
       });
-      logger.info(`📧 Password reset email sent to ${to}`);
+      logger.info(`Password reset email sent to ${to}`);
     } catch (error) {
       logger.error("Error sending password reset email");
       throw error;
@@ -122,7 +122,7 @@ class EmailService {
           </div>
         `,
       });
-      logger.info(`📧 Notification email sent to ${to}`);
+      logger.info(`Notification email sent to ${to}`);
     } catch (error) {
       logger.error("Error sending notification email");
       throw error;
@@ -156,7 +156,7 @@ class EmailService {
           </div>
         `,
       });
-      logger.info(`📧 Mention notification sent to ${to}`);
+      logger.info(`Mention notification sent to ${to}`);
     } catch (error) {
       logger.error("Error sending mention notification");
       throw error;
@@ -190,7 +190,7 @@ class EmailService {
           </div>
         `,
       });
-      logger.info(`📧 Reply notification sent to ${to}`);
+      logger.info(`Reply notification sent to ${to}`);
     } catch (error) {
       logger.error("Error sending reply notification");
       throw error;
@@ -211,7 +211,7 @@ class EmailService {
         subject: "Content Flagged for Moderation",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #DC2626;">⚠️ Content Flagged</h2>
+            <h2 style="color: #DC2626;">Content Flagged</h2>
             <p>A post has been flagged for moderation:</p>
             <p><strong>Reason:</strong> ${reason}</p>
             <p><strong>Post ID:</strong> ${postId}</p>
@@ -224,7 +224,7 @@ class EmailService {
           </div>
         `,
       });
-      logger.info(`📧 Moderation alert sent to ${to}`);
+      logger.info(`Moderation alert sent to ${to}`);
     } catch (error) {
       logger.error("Error sending moderation alert");
       throw error;
