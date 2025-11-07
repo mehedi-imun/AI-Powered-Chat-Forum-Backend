@@ -48,8 +48,12 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.EC2_BACKEND_SSH_KEY }}" > ~/.ssh/backend.pem
+          cat > ~/.ssh/backend.pem << 'EOF'
+          ${{ secrets.EC2_BACKEND_SSH_KEY }}
+          EOF
           chmod 600 ~/.ssh/backend.pem
+          # Verify key format
+          head -1 ~/.ssh/backend.pem
           ssh-keyscan -H ${{ secrets.EC2_BACKEND_IP }} >> ~/.ssh/known_hosts
 
       - name: Deploy backend
@@ -178,8 +182,12 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.EC2_INFRA_SSH_KEY }}" > ~/.ssh/infra.pem
+          cat > ~/.ssh/infra.pem << 'EOF'
+          ${{ secrets.EC2_INFRA_SSH_KEY }}
+          EOF
           chmod 600 ~/.ssh/infra.pem
+          # Verify key format
+          head -1 ~/.ssh/infra.pem
           ssh-keyscan -H ${{ secrets.EC2_INFRA_IP }} >> ~/.ssh/known_hosts
 
       - name: Deploy infra services
