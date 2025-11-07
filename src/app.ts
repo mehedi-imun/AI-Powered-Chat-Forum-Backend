@@ -142,11 +142,6 @@ app.get("/", (_req, res) => {
     version: "1.0.0",
     endpoints: {
       health: "/health",
-      auth: "/api/v1/auth",
-      users: "/api/v1/users",
-      teams: "/api/v1/teams",
-      analytics: "/api/v1/analytics",
-      notifications: "/api/v1/notifications",
     },
   });
 });

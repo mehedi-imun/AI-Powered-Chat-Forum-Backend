@@ -153,7 +153,7 @@ const getAllThreads = async (
     limit,
   };
 
-  await cacheService.setJSON(cacheKey, result, CACHE_TTL);
+  // await cacheService.setJSON(cacheKey, result, CACHE_TTL);
 
   return result;
 };

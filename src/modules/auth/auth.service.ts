@@ -132,6 +132,7 @@ const register = async (
       logger.error("Failed to send verification email")
     );
   }
+
   return {
     message:
       "Registration successful! Please check your email to verify your account.",
