@@ -132,6 +132,7 @@ app.get("/health", (_req, res) => {
     success: true,
     message: "Server is healthy",
     timestamp: new Date().toISOString(),
+    data:" Server is running smoothly",
   });
 });
 
