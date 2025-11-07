@@ -18,6 +18,9 @@ import logger from "./utils/logger";
 
 const app = express();
 
+// Trust proxy - required for Nginx reverse proxy
+app.set('trust proxy', 1);
+
 const metricsMiddleware = promBundle({
   includeMethod: true,
   includePath: true,
