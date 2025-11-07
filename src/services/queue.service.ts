@@ -80,7 +80,7 @@ export class QueueService {
       );
 
       if (sent) {
-        logger.info(`📤 Message published to queue: ${queueName}`);
+        logger.info(` Message published to queue: ${queueName}`);
       }
 
       return sent;
