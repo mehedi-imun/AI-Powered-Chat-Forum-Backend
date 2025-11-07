@@ -204,17 +204,17 @@ jobs:
         run: |
           # Create monitoring directory structure on EC2
           ssh -i ~/.ssh/infra.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_INFRA_IP }} "mkdir -p /home/ec2-user/app/monitoring/grafana/provisioning/{datasources,dashboards}"
-          
+
           # Copy Prometheus config
           scp -i ~/.ssh/infra.pem -o StrictHostKeyChecking=no \
             monitoring/prometheus.yml \
             ec2-user@${{ secrets.EC2_INFRA_IP }}:/home/ec2-user/app/monitoring/
-          
+
           # Copy Grafana datasource config
           scp -i ~/.ssh/infra.pem -o StrictHostKeyChecking=no \
             monitoring/grafana/provisioning/datasources/prometheus.yml \
             ec2-user@${{ secrets.EC2_INFRA_IP }}:/home/ec2-user/app/monitoring/grafana/provisioning/datasources/
-          
+
           # Copy Grafana dashboard configs
           scp -i ~/.ssh/infra.pem -o StrictHostKeyChecking=no \
             monitoring/grafana/provisioning/dashboards/*.yml \
