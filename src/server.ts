@@ -51,7 +51,7 @@ async function startServer() {
 		server.listen(env.PORT, () => {
 			logger.info(` Server is running on port ${env.PORT}`);
 			logger.info(`Environment: ${env.NODE_ENV}`);
-			logger.info(` API URL: http://localhost:${env.PORT}`);
+			logger.info(` API URL: http://3.1.251.202:${env.PORT}`);
 		});
 	} catch (err) {
 		logger.error({ err }, "Failed to start server");
