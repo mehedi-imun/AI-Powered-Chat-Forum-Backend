@@ -186,6 +186,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -196,6 +199,27 @@ jobs:
           # Verify key format
           head -1 ~/.ssh/infra.pem
           ssh-keyscan -H ${{ secrets.EC2_INFRA_IP }} >> ~/.ssh/known_hosts
+
+      - name: Copy monitoring configs
+        run: |
+          # Create monitoring directory structure on EC2
+          ssh -i ~/.ssh/infra.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_INFRA_IP }} "mkdir -p /home/ec2-user/app/monitoring/grafana/provisioning/{datasources,dashboards}"
+          
+          # Copy Prometheus config
+          scp -i ~/.ssh/infra.pem -o StrictHostKeyChecking=no \
+            monitoring/prometheus.yml \
+            ec2-user@${{ secrets.EC2_INFRA_IP }}:/home/ec2-user/app/monitoring/
+          
+          # Copy Grafana datasource config
+          scp -i ~/.ssh/infra.pem -o StrictHostKeyChecking=no \
+            monitoring/grafana/provisioning/datasources/prometheus.yml \
+            ec2-user@${{ secrets.EC2_INFRA_IP }}:/home/ec2-user/app/monitoring/grafana/provisioning/datasources/
+          
+          # Copy Grafana dashboard configs
+          scp -i ~/.ssh/infra.pem -o StrictHostKeyChecking=no \
+            monitoring/grafana/provisioning/dashboards/*.yml \
+            monitoring/grafana/provisioning/dashboards/*.json \
+            ec2-user@${{ secrets.EC2_INFRA_IP }}:/home/ec2-user/app/monitoring/grafana/provisioning/dashboards/
 
       - name: Deploy infra services
         env:
@@ -217,11 +241,12 @@ jobs:
               container_name: rabbitmq
               restart: unless-stopped
               environment:
-                RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-                RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+                RABBITMQ_DEFAULT_USER: \${RABBITMQ_DEFAULT_USER}
+                RABBITMQ_DEFAULT_PASS: \${RABBITMQ_DEFAULT_PASS}
               ports:
                 - "5672:5672"
                 - "15672:15672"
+                - "15692:15692"
               volumes:
                 - rabbitmq_data:/var/lib/rabbitmq
               healthcheck:
@@ -242,10 +267,11 @@ jobs:
               command:
                 - '--config.file=/etc/prometheus/prometheus.yml'
                 - '--storage.tsdb.path=/prometheus'
+                - '--web.enable-lifecycle'
               ports:
                 - "9090:9090"
               volumes:
-                - ./prometheus.yml:/etc/prometheus/prometheus.yml
+                - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
                 - prometheus_data:/prometheus
               healthcheck:
                 test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
@@ -263,13 +289,15 @@ jobs:
               container_name: grafana
               restart: unless-stopped
               environment:
-                GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
-                GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+                GF_SECURITY_ADMIN_USER: \${GF_SECURITY_ADMIN_USER}
+                GF_SECURITY_ADMIN_PASSWORD: \${GF_SECURITY_ADMIN_PASSWORD}
                 GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+                GF_PATHS_PROVISIONING: /etc/grafana/provisioning
               ports:
                 - "3000:3000"
               volumes:
                 - grafana_data:/var/lib/grafana
+                - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
               depends_on:
                 - prometheus
               healthcheck:
@@ -289,7 +317,10 @@ jobs:
             grafana_data:
           EOFCOMPOSE
 
-          # Create prometheus.yml
+          # Update Prometheus config with actual backend IP
+          sed -i "s/BACKEND_IP/\${BACKEND_IP}/g" /home/ec2-user/app/monitoring/prometheus.yml
+
+          # Create prometheus.yml in root for backward compatibility (remove this later)
           cat > prometheus.yml << EOFPROM
           global:
             scrape_interval: 15s
