@@ -19,7 +19,7 @@ import logger from "./utils/logger";
 const app = express();
 
 // Trust proxy - required for Nginx reverse proxy
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 const metricsMiddleware = promBundle({
   includeMethod: true,
@@ -135,7 +135,7 @@ app.get("/health", (_req, res) => {
     success: true,
     message: "Server is healthy",
     timestamp: new Date().toISOString(),
-    data:" Server is running smoothly",
+    data: " Server is running smoothly",
   });
 });
 
