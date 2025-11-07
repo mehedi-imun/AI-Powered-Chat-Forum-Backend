@@ -11,9 +11,7 @@ const callOpenRouter = async (
   }
 
   try {
-    logger.info(
-      `Calling OpenRouter API with model: ${env.OPENROUTER_MODEL}`
-    );
+    logger.info(`Calling OpenRouter API with model: ${env.OPENROUTER_MODEL}`);
 
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
@@ -21,8 +19,8 @@ const callOpenRouter = async (
         method: "POST",
         headers: {
           Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
-          "HTTP-Referer": env.SITE_URL || "http://localhost:3000",
-          "X-Title": env.SITE_NAME || "Chat Forum",
+          "HTTP-Referer": env.SITE_URL!,
+          "X-Title": env.SITE_NAME!,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -85,9 +83,7 @@ export const moderateContent = async (
 ): Promise<IModerationResult> => {
   try {
     if (!env.OPENROUTER_API_KEY) {
-      logger.warn(
-        "OpenRouter API key not configured, using mock moderation"
-      );
+      logger.warn("OpenRouter API key not configured, using mock moderation");
       return mockModeration(content);
     }
 

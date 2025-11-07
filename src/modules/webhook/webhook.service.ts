@@ -17,7 +17,7 @@ class WebhookService {
 		signature: string,
 		timestamp: string,
 	): Promise<boolean> {
-		const secret = env.WEBHOOK_SECRET || "default-webhook-secret";
+		const secret = env.WEBHOOK_SECRET !;
 		const signedPayload = `${timestamp}.${payload}`;
 		const expectedSignature = crypto
 			.createHmac("sha256", secret)
