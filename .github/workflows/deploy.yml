@@ -52,8 +52,15 @@ jobs:
           ${{ secrets.EC2_BACKEND_SSH_KEY }}
           EOF
           chmod 600 ~/.ssh/backend.pem
-          # Verify key format
+          # Debug: Check key format and fingerprint
+          echo "Key first line:"
           head -1 ~/.ssh/backend.pem
+          echo "Key last line:"
+          tail -1 ~/.ssh/backend.pem
+          echo "Key line count:"
+          wc -l ~/.ssh/backend.pem
+          echo "Key fingerprint:"
+          ssh-keygen -lf ~/.ssh/backend.pem || echo "Failed to read key"
           ssh-keyscan -H ${{ secrets.EC2_BACKEND_IP }} >> ~/.ssh/known_hosts
 
       - name: Deploy backend
