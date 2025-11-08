@@ -57,7 +57,7 @@ const createPost = async (
     author: new Types.ObjectId(userId),
     mentions: [],
     status: "active",
-    moderationStatus: "approved", // Auto-approve, AI will check async
+    moderationStatus: "approved", 
     isEdited: false,
   });
 

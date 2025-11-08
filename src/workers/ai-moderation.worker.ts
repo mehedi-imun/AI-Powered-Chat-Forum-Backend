@@ -44,7 +44,7 @@ export const startAIModerationWorker = async (): Promise<void> => {
           post.moderationStatus = "rejected";
           post.status = "deleted";
           logger.info(
-            `🚫 Post ${postId} rejected by AI: ${moderationResult.reasoning}`
+            ` Post ${postId} rejected by AI: ${moderationResult.reasoning}`
           );
 
           await Report.create({
