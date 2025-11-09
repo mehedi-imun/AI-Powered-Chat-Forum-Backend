@@ -81,20 +81,20 @@ jobs:
           GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
-          ssh -i ~/.ssh/ec2.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} bash << 'ENDSSH'
+          ssh -i ~/.ssh/ec2.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} bash << ENDSSH
 
           cd /home/ec2-user/app || mkdir -p /home/ec2-user/app && cd /home/ec2-user/app
 
           # Create docker-compose.yml with all services
-          cat > docker-compose.yml << 'EOFCOMPOSE'
+          cat > docker-compose.yml << EOFCOMPOSE
           services:
             rabbitmq:
               image: rabbitmq:3-management-alpine
               container_name: rabbitmq
               restart: unless-stopped
               environment:
-                RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-                RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+                RABBITMQ_DEFAULT_USER: \${RABBITMQ_DEFAULT_USER}
+                RABBITMQ_DEFAULT_PASS: \${RABBITMQ_DEFAULT_PASS}
               ports:
                 - "5672:5672"
                 - "15672:15672"
@@ -112,7 +112,7 @@ jobs:
                   max-file: "3"
 
             backend:
-              image: ${DOCKER_IMAGE}:latest
+              image: \${DOCKER_IMAGE}:latest
               container_name: chat-forum-backend
               restart: unless-stopped
               ports:
@@ -122,7 +122,7 @@ jobs:
               environment:
                 - NODE_ENV=production
                 - PORT=5000
-                - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+                - RABBITMQ_URL=amqp://\${RABBITMQ_DEFAULT_USER}:\${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
               depends_on:
                 rabbitmq:
                   condition: service_healthy
@@ -165,8 +165,8 @@ jobs:
               container_name: grafana
               restart: unless-stopped
               environment:
-                GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
-                GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+                GF_SECURITY_ADMIN_USER: \${GF_SECURITY_ADMIN_USER}
+                GF_SECURITY_ADMIN_PASSWORD: \${GF_SECURITY_ADMIN_PASSWORD}
                 GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
               ports:
                 - "3000:3000"
@@ -192,57 +192,60 @@ jobs:
           EOFCOMPOSE
 
           # Create .env file
-          cat > .env << 'EOF'
+          cat > .env << EOF
           # Server Configuration
           NODE_ENV=production
           PORT=5000
-          FRONTEND_URL=${FRONTEND_URL}
+          FRONTEND_URL=$FRONTEND_URL
 
           # Database (MongoDB Atlas - Cloud)
-          DATABASE_URL=${DATABASE_URL}
+          DATABASE_URL=$DATABASE_URL
 
           # JWT Configuration
-          JWT_SECRET=${JWT_SECRET}
-          JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
-          JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-          JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
+          JWT_SECRET=$JWT_SECRET
+          JWT_EXPIRES_IN=$JWT_EXPIRES_IN
+          JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET
+          JWT_REFRESH_EXPIRES_IN=$JWT_REFRESH_EXPIRES_IN
 
           # Redis Cloud
-          REDIS_URL=${REDIS_URL}
+          REDIS_URL=$REDIS_URL
 
           # RabbitMQ (Local container)
-          RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
-          RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-          RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+          RABBITMQ_URL=amqp://$RABBITMQ_DEFAULT_USER:$RABBITMQ_DEFAULT_PASS@rabbitmq:5672
+          RABBITMQ_DEFAULT_USER=$RABBITMQ_DEFAULT_USER
+          RABBITMQ_DEFAULT_PASS=$RABBITMQ_DEFAULT_PASS
 
           # Email (SMTP)
-          SMTP_HOST=${SMTP_HOST}
-          SMTP_PORT=${SMTP_PORT}
-          SMTP_USER=${SMTP_USER}
-          SMTP_PASSWORD=${SMTP_PASSWORD}
-          EMAIL_FROM=${EMAIL_FROM}
+          SMTP_HOST=$SMTP_HOST
+          SMTP_PORT=$SMTP_PORT
+          SMTP_USER=$SMTP_USER
+          SMTP_PASSWORD=$SMTP_PASSWORD
+          EMAIL_FROM=$EMAIL_FROM
 
           # Rate Limiting
-          RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS}
-          RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS}
+          RATE_LIMIT_WINDOW_MS=$RATE_LIMIT_WINDOW_MS
+          RATE_LIMIT_MAX_REQUESTS=$RATE_LIMIT_MAX_REQUESTS
 
           # AI (OpenRouter)
-          OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-          OPENROUTER_MODEL=${OPENROUTER_MODEL}
-          SITE_URL=${SITE_URL}
-          SITE_NAME=${SITE_NAME}
+          OPENROUTER_API_KEY=$OPENROUTER_API_KEY
+          OPENROUTER_MODEL=$OPENROUTER_MODEL
+          SITE_URL=$SITE_URL
+          SITE_NAME=$SITE_NAME
 
           # Grafana
-          GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
-          GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+          GF_SECURITY_ADMIN_USER=$GF_SECURITY_ADMIN_USER
+          GF_SECURITY_ADMIN_PASSWORD=$GF_SECURITY_ADMIN_PASSWORD
           GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
 
           # Webhook
-          WEBHOOK_SECRET=${WEBHOOK_SECRET}
+          WEBHOOK_SECRET=$WEBHOOK_SECRET
+
+          # Docker Image
+          DOCKER_IMAGE=$DOCKER_IMAGE
           EOF
 
           # Create prometheus.yml
-          cat > prometheus.yml << 'EOFPROM'
+          cat > prometheus.yml << EOFPROM
           global:
             scrape_interval: 15s
           scrape_configs:
@@ -256,7 +259,7 @@ jobs:
           EOFPROM
 
           # Pull latest image and deploy
-          docker pull ${DOCKER_IMAGE}:latest
+          docker pull $DOCKER_IMAGE:latest
           docker-compose down || true
           docker-compose up -d
 
@@ -273,12 +276,43 @@ jobs:
 
     steps:
       - name: Wait for services to start
-        run: sleep 45
+        run: sleep 60
+
+      - name: Check Docker containers
+        run: |
+          ssh -i ~/.ssh/ec2.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'ENDSSH'
+          echo "=== Docker Containers ==="
+          docker ps -a
+          echo ""
+          echo "=== Backend Logs ==="
+          docker logs chat-forum-backend --tail 50
+          echo ""
+          echo "=== RabbitMQ Logs ==="
+          docker logs rabbitmq --tail 20
+          ENDSSH
+        env:
+          EC2_IP: ${{ secrets.EC2_IP }}
+
+      - name: Setup SSH for health checks
+        run: |
+          mkdir -p ~/.ssh
+          cat > ~/.ssh/ec2.pem << 'EOF'
+          ${{ secrets.EC2_SSH_KEY }}
+          EOF
+          chmod 600 ~/.ssh/ec2.pem
 
       - name: Check backend health
         run: |
-          curl -f http://${{ secrets.EC2_IP }}:5000/health || exit 1
-          echo "✅ Backend is healthy"
+          for i in {1..10}; do
+            echo "Attempt $i/10..."
+            if curl -f http://${{ secrets.EC2_IP }}:5000/health; then
+              echo "✅ Backend is healthy"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "❌ Backend failed to start"
+          exit 1
 
       - name: Check RabbitMQ
         run: |
