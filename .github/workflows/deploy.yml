@@ -42,9 +42,9 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_BACKEND_SSH_KEY }}" > ~/.ssh/backend.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/backend.pem
           chmod 600 ~/.ssh/backend.pem
-          ssh-keyscan -H ${{ secrets.EC2_BACKEND_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
       - name: Deploy All Services on EC2
         env:
