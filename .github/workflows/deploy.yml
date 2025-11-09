@@ -42,18 +42,12 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          cat > ~/.ssh/backend.pem << 'EOF'
-          ${{ secrets.EC2_KEY }}
-          EOF
+          echo "${{ secrets.EC2_KEY_BASE64 }}" | base64 --decode > ~/.ssh/backend.pem
           chmod 600 ~/.ssh/backend.pem
-          # Debug: Check key format and fingerprint
-          echo "Key first line:"
-          head -1 ~/.ssh/backend.pem
-          echo "Key last line:"
-          tail -1 ~/.ssh/backend.pem
-          echo "Key line count:"
-          wc -l ~/.ssh/backend.pem
-          echo "Key fingerprint:"
+          # Debug: Check key format
+          echo "Key first line:" && head -1 ~/.ssh/backend.pem
+          echo "Key last line:" && tail -1 ~/.ssh/backend.pem
+          echo "Key line count:" && wc -l ~/.ssh/backend.pem
           ssh-keygen -lf ~/.ssh/backend.pem || echo "Failed to read key"
           ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
@@ -167,13 +161,13 @@ jobs:
           docker-compose down || true
           docker-compose up -d
           docker image prune -af --filter "until=24h"
-          echo " All services deployed!"
+          echo "✅ All services deployed!"
           ENDSSH
 
       - name: Health Check
         run: |
           sleep 30
-          curl -f http://${{ secrets.EC2_IP }}:5000/health && echo "Backend healthy"
-          curl -s http://${{ secrets.EC2_IP }}:15672 && echo "RabbitMQ running"
-          curl -s http://${{ secrets.EC2_IP }}:3000 && echo "Grafana running"
-          curl -s http://${{ secrets.EC2_IP }}:9090 && echo "Prometheus running"
+          curl -f http://${{ secrets.EC2_IP }}:5000/health && echo "✅ Backend healthy"
+          curl -s http://${{ secrets.EC2_IP }}:15672 && echo "✅ RabbitMQ running"
+          curl -s http://${{ secrets.EC2_IP }}:3000 && echo "✅ Grafana running"
+          curl -s http://${{ secrets.EC2_IP }}:9090 && echo "✅ Prometheus running"
