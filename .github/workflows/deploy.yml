@@ -1,4 +1,4 @@
-name: Build and Deploy (Backend + RabbitMQ + Infra)
+name: Build and Deploy
 
 on:
   push:
@@ -7,152 +7,162 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_IMAGE_BACKEND: ${{ secrets.DOCKERHUB_USERNAME }}/chat-forum-backend
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/chat-forum-backend
 
 jobs:
   build-and-deploy:
-    name: Build and Deploy to EC2s
+    name: Build and Deploy All Services
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          node-version: 20
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-
-      # ---- Build & Push Backend Image ----
-      - name: Build Docker Image (Backend)
-        run: docker build -t $DOCKER_IMAGE_BACKEND:latest -f Dockerfile .
-
-      - name: Push Docker Image (Backend)
-        run: docker push $DOCKER_IMAGE_BACKEND:latest
-
-      # ---- Deploy Backend + RabbitMQ ----
-      - name: Deploy Backend + RabbitMQ
-        uses: appleboy/ssh-action@v0.1.10
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
         with:
-          host: ${{ secrets.EC2_BACKEND_IP }}
-          username: ubuntu
-          key: ${{ secrets.EC2_BACKEND_SSH_KEY }}
-          script: |
-            set -e
-            echo "Deploying backend + RabbitMQ..."
-            cd ~/app || mkdir ~/app && cd ~/app
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:latest
+            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
-            # Write .env file
-            cat <<EOF > .env
-            NODE_ENV=production
-            PORT=5000
-            MONGODB_URI=${{ secrets.MONGODB_URI }}
-            REDIS_URL=${{ secrets.REDIS_URL }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
-            RABBITMQ_URL=amqp://rabbitmq:5672
-            PROMETHEUS_URL=http://${{ secrets.EC2_INFRA_IP }}:9090
-            EOF
-
-            # Write docker-compose.yml
-            cat <<EOF > docker-compose.yml
-            version: "3.8"
-            services:
-              rabbitmq:
-                image: rabbitmq:3-management
-                container_name: rabbitmq
-                ports:
-                  - "5672:5672"
-                  - "15672:15672"
-                restart: always
-                networks:
-                  - backend-net
-
-              backend:
-                image: $DOCKER_IMAGE_BACKEND:latest
-                container_name: backend
-                env_file:
-                  - .env
-                ports:
-                  - "5000:5000"
-                depends_on:
-                  - rabbitmq
-                restart: always
-                networks:
-                  - backend-net
-
-            networks:
-              backend-net:
-                driver: bridge
-            EOF
-
-            docker compose pull || true
-            docker compose up -d --build
-            docker image prune -f
-
-      # ---- Deploy Prometheus + Grafana ----
-      - name: Deploy Infra (Prometheus + Grafana)
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.EC2_INFRA_IP }}
-          username: ubuntu
-          key: ${{ secrets.EC2_INFRA_SSH_KEY }}
-          script: |
-            set -e
-            echo "Deploying Prometheus + Grafana..."
-            cd ~/infra || mkdir ~/infra && cd ~/infra
-
-            cat <<EOF > docker-compose.yml
-            version: "3.8"
-            services:
-              prometheus:
-                image: prom/prometheus:latest
-                container_name: prometheus
-                volumes:
-                  - ./prometheus.yml:/etc/prometheus/prometheus.yml
-                ports:
-                  - "9090:9090"
-                restart: always
-                networks:
-                  - infra-net
-
-              grafana:
-                image: grafana/grafana:latest
-                container_name: grafana
-                ports:
-                  - "3000:3000"
-                restart: always
-                networks:
-                  - infra-net
-
-            networks:
-              infra-net:
-                driver: bridge
-            EOF
-
-            # Create Prometheus config
-            cat <<EOF > prometheus.yml
-            global:
-              scrape_interval: 15s
-
-            scrape_configs:
-              - job_name: 'backend'
-                static_configs:
-                  - targets: ['${{ secrets.EC2_BACKEND_IP }}:5000']
-            EOF
-
-            docker compose pull || true
-            docker compose up -d --build
-            docker image prune -f
-
-      # ---- Health Check ----
-      - name: Verify Deployment
+      - name: Setup SSH
         run: |
-          echo "Checking services..."
-          sleep 10
-          curl -f http://${{ secrets.EC2_BACKEND_IP }}:5000 || echo "Backend not responding"
-          curl -f http://${{ secrets.EC2_INFRA_IP }}:9090 || echo "Prometheus not responding"
-          curl -f http://${{ secrets.EC2_INFRA_IP }}:3000 || echo "Grafana not responding"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_BACKEND_SSH_KEY }}" > ~/.ssh/backend.pem
+          chmod 600 ~/.ssh/backend.pem
+          ssh-keyscan -H ${{ secrets.EC2_BACKEND_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy All Services on EC2
+        env:
+          DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          RABBITMQ_DEFAULT_USER: ${{ secrets.RABBITMQ_DEFAULT_USER }}
+          RABBITMQ_DEFAULT_PASS: ${{ secrets.RABBITMQ_DEFAULT_PASS }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+          JWT_REFRESH_EXPIRES_IN: ${{ secrets.JWT_REFRESH_EXPIRES_IN }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          RATE_LIMIT_WINDOW_MS: ${{ secrets.RATE_LIMIT_WINDOW_MS }}
+          RATE_LIMIT_MAX_REQUESTS: ${{ secrets.RATE_LIMIT_MAX_REQUESTS }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+          SITE_NAME: ${{ secrets.SITE_NAME }}
+          GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
+          GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: |
+          ssh -i ~/.ssh/backend.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_BACKEND_IP }} << 'ENDSSH'
+          cd /home/ec2-user/app
+
+          # Create docker-compose.yml
+          cat > docker-compose.yml << 'EOF'
+          version: '3.9'
+          services:
+            backend:
+              image: ${DOCKER_IMAGE}:latest
+              container_name: chat-forum-backend
+              restart: unless-stopped
+              ports:
+                - "5000:5000"
+              env_file:
+                - .env
+              environment:
+                - NODE_ENV=production
+                - PORT=5000
+
+            rabbitmq:
+              image: rabbitmq:3-management-alpine
+              container_name: rabbitmq
+              restart: unless-stopped
+              environment:
+                RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+                RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+              ports:
+                - "5672:5672"
+                - "15672:15672"
+
+            prometheus:
+              image: prom/prometheus:latest
+              container_name: prometheus
+              restart: unless-stopped
+              ports:
+                - "9090:9090"
+              volumes:
+                - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+
+            grafana:
+              image: grafana/grafana:latest
+              container_name: grafana
+              restart: unless-stopped
+              environment:
+                GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
+                GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+              ports:
+                - "3000:3000"
+              depends_on:
+                - prometheus
+          EOF
+
+          # Create .env
+          cat > .env << 'EOF'
+          NODE_ENV=production
+          PORT=5000
+          DATABASE_URL=${DATABASE_URL}
+          REDIS_URL=${REDIS_URL}
+          RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@localhost:5672
+          JWT_SECRET=${JWT_SECRET}
+          JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+          JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+          JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
+          SMTP_HOST=${SMTP_HOST}
+          SMTP_PORT=${SMTP_PORT}
+          SMTP_USER=${SMTP_USER}
+          SMTP_PASSWORD=${SMTP_PASSWORD}
+          EMAIL_FROM=${EMAIL_FROM}
+          FRONTEND_URL=${FRONTEND_URL}
+          RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS}
+          RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS}
+          OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+          OPENROUTER_MODEL=${OPENROUTER_MODEL}
+          SITE_URL=${SITE_URL}
+          SITE_NAME=${SITE_NAME}
+          GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+          GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+          WEBHOOK_SECRET=${WEBHOOK_SECRET}
+          EOF
+
+          docker-compose down || true
+          docker-compose up -d
+          docker image prune -af --filter "until=24h"
+          echo " All services deployed!"
+          ENDSSH
+
+      - name: Health Check
+        run: |
+          sleep 30
+          curl -f http://${{ secrets.EC2_BACKEND_IP }}:5000/health && echo "Backend healthy"
+          curl -s http://${{ secrets.EC2_BACKEND_IP }}:15672 && echo "RabbitMQ running"
+          curl -s http://${{ secrets.EC2_BACKEND_IP }}:3000 && echo "Grafana running"
+          curl -s http://${{ secrets.EC2_BACKEND_IP }}:9090 && echo "Prometheus running"
