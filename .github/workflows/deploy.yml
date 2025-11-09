@@ -75,12 +75,12 @@ jobs:
           GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
-          ssh -i ~/.ssh/backend.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} bash << 'ENDSSH'
+          ssh -i ~/.ssh/backend.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} bash << "ENDSSH"
           set -e
           cd /home/ec2-user/app
 
           # ---------- .env ----------
-          cat > .env << 'EOF'
+          cat > .env << EOF
           NODE_ENV=production
           PORT=5000
           RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@localhost:5672
@@ -105,7 +105,7 @@ jobs:
 
           # ---------- Prometheus config ----------
           mkdir -p monitoring
-          cat > monitoring/prometheus.yml << 'EOFPROM'
+          cat > monitoring/prometheus.yml << EOFPROM
           global:
             scrape_interval: 15s
             evaluation_interval: 15s
@@ -120,7 +120,7 @@ jobs:
           EOFPROM
 
           # ---------- docker-compose.yml ----------
-          cat > docker-compose.yml << 'EOFCOMPOSE'
+          cat > docker-compose.yml << EOFCOMPOSE
           version: '3.9'
           services:
             rabbitmq:
