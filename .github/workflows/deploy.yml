@@ -79,7 +79,7 @@ jobs:
           GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
-          ssh -i ~/.ssh/backend.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_BACKEND_IP }} bash << 'ENDSSH'
+          ssh -i ~/.ssh/backend.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} bash << 'ENDSSH'
 
           cd /home/ec2-user/app || mkdir -p /home/ec2-user/app && cd /home/ec2-user/app
 
