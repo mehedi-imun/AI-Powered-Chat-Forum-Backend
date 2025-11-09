@@ -112,7 +112,7 @@ jobs:
                   max-file: "3"
 
             backend:
-              image: \${DOCKER_IMAGE}:latest
+              image: mehediimun/chat-forum-backend:latest
               container_name: chat-forum-backend
               restart: unless-stopped
               ports:
@@ -275,6 +275,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Setup SSH for health checks
+        run: |
+          mkdir -p ~/.ssh
+          cat > ~/.ssh/ec2.pem << 'EOF'
+          ${{ secrets.EC2_SSH_KEY }}
+          EOF
+          chmod 600 ~/.ssh/ec2.pem
+          ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
+
       - name: Wait for services to start
         run: sleep 60
 
@@ -290,16 +299,6 @@ jobs:
           echo "=== RabbitMQ Logs ==="
           docker logs rabbitmq --tail 20
           ENDSSH
-        env:
-          EC2_IP: ${{ secrets.EC2_IP }}
-
-      - name: Setup SSH for health checks
-        run: |
-          mkdir -p ~/.ssh
-          cat > ~/.ssh/ec2.pem << 'EOF'
-          ${{ secrets.EC2_SSH_KEY }}
-          EOF
-          chmod 600 ~/.ssh/ec2.pem
 
       - name: Check backend health
         run: |
