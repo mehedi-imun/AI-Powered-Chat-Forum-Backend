@@ -52,15 +52,11 @@ jobs:
           ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
       # 6️⃣ Deploy services
-      - name: Deploy All Services on EC2
+      - name: Deploy Services on EC2
         env:
           DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
           RABBITMQ_DEFAULT_USER: ${{ secrets.RABBITMQ_DEFAULT_USER }}
           RABBITMQ_DEFAULT_PASS: ${{ secrets.RABBITMQ_DEFAULT_PASS }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
           JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
@@ -71,8 +67,8 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
-          RATE_LIMIT_WINDOW_MS: ${{ secrets.RATE_LIMIT_WINDOW_MS }}
-          RATE_LIMIT_MAX_REQUESTS: ${{ secrets.RATE_LIMIT_MAX_REQUESTS }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
           SITE_URL: ${{ secrets.SITE_URL }}
           SITE_NAME: ${{ secrets.SITE_NAME }}
           GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
@@ -87,8 +83,6 @@ jobs:
           cat > .env << 'EOF'
           NODE_ENV=production
           PORT=5000
-          DATABASE_URL=${DATABASE_URL}
-          REDIS_URL=${REDIS_URL}
           RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@localhost:5672
           JWT_SECRET=${JWT_SECRET}
           JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
@@ -100,8 +94,6 @@ jobs:
           SMTP_PASSWORD=${SMTP_PASSWORD}
           EMAIL_FROM=${EMAIL_FROM}
           FRONTEND_URL=${FRONTEND_URL}
-          RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS}
-          RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS}
           OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
           OPENROUTER_MODEL=${OPENROUTER_MODEL}
           SITE_URL=${SITE_URL}
@@ -111,17 +103,16 @@ jobs:
           WEBHOOK_SECRET=${WEBHOOK_SECRET}
           EOF
 
+          # ---------- Prometheus config ----------
           mkdir -p monitoring
           cat > monitoring/prometheus.yml << 'EOFPROM'
           global:
             scrape_interval: 15s
             evaluation_interval: 15s
-
           scrape_configs:
             - job_name: 'prometheus'
               static_configs:
                 - targets: ['localhost:9090']
-
             - job_name: 'backend'
               static_configs:
                 - targets: ['backend:5000']
@@ -143,6 +134,17 @@ jobs:
                 - "5672:5672"
                 - "15672:15672"
 
+            backend:
+              image: ${DOCKER_IMAGE}:latest
+              container_name: chat-forum-backend
+              restart: unless-stopped
+              ports:
+                - "5000:5000"
+              env_file:
+                - .env
+              depends_on:
+                - rabbitmq
+
             prometheus:
               image: prom/prometheus:latest
               container_name: prometheus
@@ -151,6 +153,8 @@ jobs:
                 - "9090:9090"
               volumes:
                 - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+              depends_on:
+                - backend
 
             grafana:
               image: grafana/grafana:latest
@@ -164,28 +168,13 @@ jobs:
               depends_on:
                 - prometheus
 
-            backend:
-              image: ${DOCKER_IMAGE}:latest
-              container_name: chat-forum-backend
-              restart: unless-stopped
-              ports:
-                - "5000:5000"
-              env_file:
-                - .env
-              environment:
-                - NODE_ENV=production
-                - PORT=5000
-              depends_on:
-                - rabbitmq
-                - prometheus
-                - grafana
           volumes:
             prometheus_data:
             grafana_data:
             rabbitmq_data:
           EOFCOMPOSE
 
-          # Pull image & deploy
+          # Pull latest image & deploy
           docker pull ${DOCKER_IMAGE}:latest
           docker-compose down || true
           docker-compose up -d
@@ -199,6 +188,6 @@ jobs:
         run: |
           sleep 30
           curl -f http://${{ secrets.EC2_IP }}:5000/health && echo "✅ Backend healthy"
-          curl -s http://${{ secrets.EC2_IP }}:15672 && echo "✅ RabbitMQ running"
+          curl -s http://${{ secrets.EC2_IP }}:5672 && echo "✅ RabbitMQ running"
           curl -s http://${{ secrets.EC2_IP }}:3000 && echo "✅ Grafana running"
           curl -s http://${{ secrets.EC2_IP }}:9090 && echo "✅ Prometheus running"
