@@ -15,18 +15,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # 3️⃣ Login Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # 4️⃣ Build & Push Docker Image
       - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
@@ -39,18 +43,15 @@ jobs:
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
+      # 5️⃣ Setup SSH
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_KEY_BASE64 }}" | base64 --decode > ~/.ssh/backend.pem
           chmod 600 ~/.ssh/backend.pem
-          # Debug: Check key format
-          echo "Key first line:" && head -1 ~/.ssh/backend.pem
-          echo "Key last line:" && tail -1 ~/.ssh/backend.pem
-          echo "Key line count:" && wc -l ~/.ssh/backend.pem
-          ssh-keygen -lf ~/.ssh/backend.pem || echo "Failed to read key"
           ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
+      # 6️⃣ Deploy Backend + Infra Services
       - name: Deploy All Services on EC2
         env:
           DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
@@ -78,10 +79,11 @@ jobs:
           GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
-          ssh -i ~/.ssh/backend.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'ENDSSH'
-          cd /home/ec2-user/app
+          ssh -i ~/.ssh/backend.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_BACKEND_IP }} bash << 'ENDSSH'
 
-          # Create docker-compose.yml
+          cd /home/ec2-user/app || mkdir -p /home/ec2-user/app && cd /home/ec2-user/app
+
+          # ---------- Docker Compose ----------
           cat > docker-compose.yml << 'EOF'
           version: '3.9'
           services:
@@ -130,7 +132,7 @@ jobs:
                 - prometheus
           EOF
 
-          # Create .env
+          # ---------- .env ----------
           cat > .env << 'EOF'
           NODE_ENV=production
           PORT=5000
@@ -161,9 +163,11 @@ jobs:
           docker-compose down || true
           docker-compose up -d
           docker image prune -af --filter "until=24h"
+
           echo "✅ All services deployed!"
           ENDSSH
 
+      # 7️⃣ Health Check
       - name: Health Check
         run: |
           sleep 30
