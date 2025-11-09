@@ -15,18 +15,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # 3️⃣ Login Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # 4️⃣ Build & Push Docker Image
       - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
@@ -39,6 +43,7 @@ jobs:
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
+      # 5️⃣ Setup SSH
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -46,6 +51,7 @@ jobs:
           chmod 600 ~/.ssh/backend.pem
           ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
+      # 6️⃣ Deploy services
       - name: Deploy All Services on EC2
         env:
           DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
@@ -75,11 +81,10 @@ jobs:
         run: |
           ssh -i ~/.ssh/backend.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} bash << 'ENDSSH'
           set -e
-
           cd /home/ec2-user/app
 
-          # Create .env file
-          cat > .env << 'EOFENV'
+          # ---------- .env ----------
+          cat > .env << 'EOF'
           NODE_ENV=production
           PORT=5000
           DATABASE_URL=${DATABASE_URL}
@@ -104,12 +109,9 @@ jobs:
           GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
           GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
           WEBHOOK_SECRET=${WEBHOOK_SECRET}
-          EOFENV
+          EOF
 
-          # Create monitoring directory
           mkdir -p monitoring
-
-          # Create prometheus config
           cat > monitoring/prometheus.yml << 'EOFPROM'
           global:
             scrape_interval: 15s
@@ -126,9 +128,42 @@ jobs:
               metrics_path: '/metrics'
           EOFPROM
 
-          # Create docker-compose.yml
+          # ---------- docker-compose.yml ----------
           cat > docker-compose.yml << 'EOFCOMPOSE'
+          version: '3.9'
           services:
+            rabbitmq:
+              image: rabbitmq:3-management-alpine
+              container_name: rabbitmq
+              restart: unless-stopped
+              environment:
+                RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+                RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+              ports:
+                - "5672:5672"
+                - "15672:15672"
+
+            prometheus:
+              image: prom/prometheus:latest
+              container_name: prometheus
+              restart: unless-stopped
+              ports:
+                - "9090:9090"
+              volumes:
+                - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+
+            grafana:
+              image: grafana/grafana:latest
+              container_name: grafana
+              restart: unless-stopped
+              environment:
+                GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
+                GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+              ports:
+                - "3000:3000"
+              depends_on:
+                - prometheus
+
             backend:
               image: ${DOCKER_IMAGE}:latest
               container_name: chat-forum-backend
@@ -140,92 +175,26 @@ jobs:
               environment:
                 - NODE_ENV=production
                 - PORT=5000
-              healthcheck:
-                test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/health')"]
-                interval: 30s
-                timeout: 10s
-                retries: 3
-              logging:
-                driver: "json-file"
-                options:
-                  max-size: "10m"
-                  max-file: "3"
-
-            rabbitmq:
-              image: rabbitmq:3-management-alpine
-              container_name: rabbitmq
-              restart: unless-stopped
-              environment:
-                RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-                RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
-              ports:
-                - "5672:5672"
-                - "15672:15672"
-              volumes:
-                - rabbitmq_data:/var/lib/rabbitmq
-              healthcheck:
-                test: ["CMD", "rabbitmq-diagnostics", "ping"]
-                interval: 30s
-                timeout: 10s
-                retries: 3
-              logging:
-                driver: "json-file"
-                options:
-                  max-size: "10m"
-                  max-file: "3"
-
-            prometheus:
-              image: prom/prometheus:latest
-              container_name: prometheus
-              restart: unless-stopped
-              ports:
-                - "9090:9090"
-              volumes:
-                - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-                - prometheus_data:/prometheus
-              command:
-                - '--config.file=/etc/prometheus/prometheus.yml'
-                - '--storage.tsdb.path=/prometheus'
-              logging:
-                driver: "json-file"
-                options:
-                  max-size: "10m"
-                  max-file: "3"
-
-            grafana:
-              image: grafana/grafana:latest
-              container_name: grafana
-              restart: unless-stopped
-              environment:
-                GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
-                GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
-                GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
-              ports:
-                - "3000:3000"
-              volumes:
-                - grafana_data:/var/lib/grafana
               depends_on:
+                - rabbitmq
                 - prometheus
-              logging:
-                driver: "json-file"
-                options:
-                  max-size: "10m"
-                  max-file: "3"
-
+                - grafana
           volumes:
-            rabbitmq_data:
             prometheus_data:
             grafana_data:
+            rabbitmq_data:
           EOFCOMPOSE
 
-          # Pull latest image and deploy
+          # Pull image & deploy
           docker pull ${DOCKER_IMAGE}:latest
           docker-compose down || true
           docker-compose up -d
           docker image prune -af --filter "until=24h"
+
           echo "✅ All services deployed!"
           ENDSSH
 
+      # 7️⃣ Health Check
       - name: Health Check
         run: |
           sleep 30
