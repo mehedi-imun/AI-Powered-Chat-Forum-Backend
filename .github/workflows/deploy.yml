@@ -173,8 +173,8 @@ jobs:
                 - "3000:3000"
               volumes:
                 - grafana_data:/var/lib/grafana
-                - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
-                - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+                - /home/ec2-user/app/monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+                - /home/ec2-user/app/monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
               depends_on:
                 - prometheus
               healthcheck:
