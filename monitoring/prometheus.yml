@@ -3,17 +3,17 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  # Backend metrics
-  - job_name: "backend"
-    static_configs:
-      - targets: ["mehediimun.duckdns.org:5000"]
+# Backend metrics
+- job_name: "backend"
+  static_configs:
+  - targets: [ "3.1.47.175:5000" ]
 
-  # Prometheus self-monitoring
-  - job_name: "prometheus"
-    static_configs:
-      - targets: ["13.228.167.171:9090"]   # Replace localhost with infra IP
+# Prometheus self-monitoring
+- job_name: "prometheus"
+  static_configs:
+  - targets: [ "3.1.47.175:9090" ]
 
-  # RabbitMQ metrics
-  - job_name: "rabbitmq"
-    static_configs:
-      - targets: ["13.228.167.171:15692"]  # Replace localhost with infra IP
+# RabbitMQ metrics
+- job_name: "rabbitmq"
+  static_configs:
+  - targets: [ "3.1.47.175:15672" ] # RabbitMQ management port

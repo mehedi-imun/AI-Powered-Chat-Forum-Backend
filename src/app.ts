@@ -116,6 +116,7 @@ const authLimiter = rateLimit({
 app.use(
   cors({
     origin: "https://main.dvxyjp4nr52h2.amplifyapp.com",
+    // origin: "http://localhost:3000",
     credentials: true,
   })
 );
