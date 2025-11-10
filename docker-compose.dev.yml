@@ -9,7 +9,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: admin123
       MONGO_INITDB_DATABASE: chat_forum
     ports:
-      - '27017:27017'
+      - '27018:27017'
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
