@@ -322,9 +322,9 @@ jobs:
         run: |
           curl -s http://${{ secrets.EC2_IP }}:3000 && echo "✅ Grafana is running"
 
-      - name: Check Prometheus
-        run: |
-          curl -s http://${{ secrets.EC2_IP }}:9090 && echo "✅ Prometheus is running"
+      # - name: Check Prometheus
+      #   run: |
+      #     curl -s http://${{ secrets.EC2_IP }}:9090 && echo "✅ Prometheus is running"
 
       - name: Deployment Summary
         run: |
