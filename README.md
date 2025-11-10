@@ -185,7 +185,6 @@ platforms:
 - **Backend:**  AWS EC2 instance-1
 - **Database:** MongoDB Atlas 
 - **redis** Redis Cloud
-- **Grafana/Prometheus/RMQ:** AWS EC2 instance-2
 ---
 
 ### Known Limitations
