@@ -9,6 +9,7 @@ import env from "./config/env";
 import globalErrorHandler from "./middleware/globalErrorHandler";
 import { AdminRoutes } from "./modules/admin/admin.routes";
 import { AuthRoutes } from "./modules/auth/auth.routes";
+import { HealthRoutes } from "./modules/health/health.routes";
 import { NotificationRoutes } from "./modules/notification/notification.routes";
 import { PostRoutes } from "./modules/post/post.routes";
 import { ThreadRoutes } from "./modules/thread/thread.routes";
@@ -22,103 +23,102 @@ const app = express();
 app.set("trust proxy", 1);
 
 const metricsMiddleware = promBundle({
-  includeMethod: true,
-  includePath: true,
-  includeStatusCode: true,
-  includeUp: true,
-  customLabels: { app: "chat-forum-api" },
-  promClient: {
-    collectDefaultMetrics: {},
-  },
-  normalizePath: (req: express.Request) => {
-    try {
-      let p = "";
-      if (req.baseUrl && req.route && req.route.path) {
-        p = `${req.baseUrl}${req.route.path}`;
-      } else if (req.baseUrl) {
-        p = `${req.baseUrl}${req.path || ""}`;
-      } else if (req.originalUrl) {
-        p = req.originalUrl.split("?")[0];
-      } else {
-        p = req.path || req.url || "";
-      }
+	includeMethod: true,
+	includePath: true,
+	includeStatusCode: true,
+	includeUp: true,
+	customLabels: { app: "chat-forum-api" },
+	promClient: {
+		collectDefaultMetrics: {},
+	},
+	normalizePath: (req: express.Request) => {
+		try {
+			let p = "";
+			if (req.baseUrl && req.route && req.route.path) {
+				p = `${req.baseUrl}${req.route.path}`;
+			} else if (req.baseUrl) {
+				p = `${req.baseUrl}${req.path || ""}`;
+			} else if (req.originalUrl) {
+				p = req.originalUrl.split("?")[0];
+			} else {
+				p = req.path || req.url || "";
+			}
 
-      p = p.split("?")[0];
-      p = p.replace(/\/[a-f0-9]{24}/g, "/:id");
-      p = p.replace(/\/\d+/g, "/:id");
-      p = p.replace(/\/\/{2,}/g, "/");
-      if (p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
+			p = p.split("?")[0];
+			p = p.replace(/\/[a-f0-9]{24}/g, "/:id");
+			p = p.replace(/\/\d+/g, "/:id");
+			p = p.replace(/\/\/{2,}/g, "/");
+			if (p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
 
-      return p;
-    } catch (_err) {
-      return (req.path || req.url || "").replace(/\/\/{2,}/g, "/");
-    }
-  },
-  metricsPath: "/metrics",
-  autoregister: true,
+			return p;
+		} catch (_err) {
+			return (req.path || req.url || "").replace(/\/\/{2,}/g, "/");
+		}
+	},
+	metricsPath: "/metrics",
+	autoregister: true,
 });
 app.use(metricsMiddleware);
 
 app.use(
-  (
-    _req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) => {
-    const start = Date.now();
-    const originalEnd = res.end.bind(res);
+	(
+		_req: express.Request,
+		res: express.Response,
+		next: express.NextFunction,
+	) => {
+		const start = Date.now();
+		const originalEnd = res.end.bind(res);
 
-    res.end = function (...args: any[]) {
-      const duration = Date.now() - start;
-      res.locals.responseTime = duration;
-      return originalEnd(...args);
-    } as typeof res.end;
+		res.end = ((...args: any[]) => {
+			const duration = Date.now() - start;
+			res.locals.responseTime = duration;
+			return originalEnd(...args);
+		}) as typeof res.end;
 
-    next();
-  }
+		next();
+	},
 );
 
 app.use(
-  pinoHttp({
-    logger,
-    autoLogging: {
-      ignore: (req) => req.url === "/health" || req.url === "/metrics",
-    },
-    customLogLevel: (_req, res, err) => {
-      if (res.statusCode >= 500 || err) return "error";
-      if (res.statusCode >= 400) return "warn";
-      return "info";
-    },
-    customSuccessMessage: (req: express.Request, res: express.Response) => {
-      const responseTime = res.locals.responseTime || "N/A";
-      return ` ${req.method} ${req.url} → ${res.statusCode} (${responseTime}ms)`;
-    },
-    customErrorMessage: (req, res, err) => {
-      return `${req.method} ${req.url} → ${res.statusCode} - ${err.message}`;
-    },
-    serializers: {
-      req: () => undefined,
-      res: () => undefined,
-    },
-  })
+	pinoHttp({
+		logger,
+		autoLogging: {
+			ignore: (req) => req.url === "/health" || req.url === "/metrics",
+		},
+		customLogLevel: (_req, res, err) => {
+			if (res.statusCode >= 500 || err) return "error";
+			if (res.statusCode >= 400) return "warn";
+			return "info";
+		},
+		customSuccessMessage: (req: express.Request, res: express.Response) => {
+			const responseTime = res.locals.responseTime || "N/A";
+			return ` ${req.method} ${req.url} → ${res.statusCode} (${responseTime}ms)`;
+		},
+		customErrorMessage: (req, res, err) => {
+			return `${req.method} ${req.url} → ${res.statusCode} - ${err.message}`;
+		},
+		serializers: {
+			req: () => undefined,
+			res: () => undefined,
+		},
+	}),
 );
 
 app.use(helmet());
 
 const authLimiter = rateLimit({
-  windowMs: env.RATE_LIMIT_WINDOW_MS,
-  max: Math.min(env.RATE_LIMIT_MAX_REQUESTS, 20),
-  message: "Too many auth requests from this IP, please try again later.",
-  standardHeaders: true,
-  legacyHeaders: false,
+	windowMs: env.RATE_LIMIT_WINDOW_MS,
+	max: Math.min(env.RATE_LIMIT_MAX_REQUESTS, 20),
+	message: "Too many auth requests from this IP, please try again later.",
+	standardHeaders: true,
+	legacyHeaders: false,
 });
 
 app.use(
-  cors({
-    origin: "https://main.dvxyjp4nr52h2.amplifyapp.com",
-    // origin: "http://localhost:3000",
-    credentials: true,
-  })
+	cors({
+		origin: env.FRONTEND_URL,
+		credentials: true,
+	}),
 );
 
 app.use(express.json());
@@ -131,32 +131,25 @@ app.use("/api/v1/posts", PostRoutes);
 app.use("/api/v1/notifications", NotificationRoutes);
 app.use("/api/v1/admin", AdminRoutes);
 app.use("/api/v1/webhook", WebhookRoutes);
-app.get("/health", (_req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Server is healthy",
-    timestamp: new Date().toISOString(),
-    data: " Server is running smoothly",
-  });
-});
+app.use("/health", HealthRoutes);
 
 app.get("/", (_req, res) => {
-  res.json({
-    success: true,
-    message: "Chat Forum API is running",
-    version: "1.0.0",
-    endpoints: {
-      health: "/health",
-    },
-  });
+	res.json({
+		success: true,
+		message: "Chat Forum API is running",
+		version: "1.0.0",
+		endpoints: {
+			health: "/health",
+		},
+	});
 });
 
 app.use(globalErrorHandler);
 
 app.use((_req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Route Not Found",
-  });
+	res.status(404).json({
+		success: false,
+		message: "Route Not Found",
+	});
 });
 export default app;
