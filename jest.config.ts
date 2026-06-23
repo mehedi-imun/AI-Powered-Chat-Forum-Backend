@@ -18,7 +18,7 @@ const config: Config = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   coverageThreshold: {
-    "./src/modules/health/health.controller.ts": {
+    global: {
       branches: 70,
       functions: 70,
       lines: 70,

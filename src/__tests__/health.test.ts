@@ -6,54 +6,56 @@ afterEach(() => jest.clearAllMocks());
 
 describe("GET /health", () => {
 	it("returns 200 with success: true", async () => {
-		const response = await request(app).get("/health");
-
-		expect(response.status).toBe(httpStatus.OK);
-		expect(response.body).toHaveProperty("success", true);
+		const res = await request(app).get("/health");
+		expect(res.status).toBe(httpStatus.OK);
+		expect(res.body).toHaveProperty("success", true);
 	});
 
-	it("returns version field equal to '1.0.0'", async () => {
-		const response = await request(app).get("/health");
-
-		expect(response.body).toHaveProperty("version", "1.0.0");
+	it("returns version field equal to 1.0.0", async () => {
+		const res = await request(app).get("/health");
+		expect(res.status).toBe(httpStatus.OK);
+		expect(res.body).toHaveProperty("version", "1.0.0");
 	});
 
 	it("returns uptime field that is a positive number", async () => {
-		const response = await request(app).get("/health");
-
-		expect(response.body).toHaveProperty("uptime");
-		expect(typeof response.body.uptime).toBe("number");
-		expect(response.body.uptime).toBeGreaterThan(0);
+		const res = await request(app).get("/health");
+		expect(res.status).toBe(httpStatus.OK);
+		expect(res.body).toHaveProperty("uptime");
+		expect(typeof res.body.uptime).toBe("number");
+		expect(res.body.uptime).toBeGreaterThan(0);
 	});
 
-	it("returns timestamp field in ISO 8601 format", async () => {
-		const response = await request(app).get("/health");
-
-		expect(response.body).toHaveProperty("timestamp");
-		const parsed = new Date(response.body.timestamp);
-		expect(parsed.toISOString()).toBe(response.body.timestamp);
+	it("returns timestamp in ISO 8601 format", async () => {
+		const res = await request(app).get("/health");
+		expect(res.status).toBe(httpStatus.OK);
+		expect(res.body).toHaveProperty("timestamp");
+		const parsed = new Date(res.body.timestamp);
+		expect(parsed.toISOString()).toBe(res.body.timestamp);
 	});
 
-	it("returns message 'Server is healthy'", async () => {
-		const response = await request(app).get("/health");
-
-		expect(response.body).toHaveProperty("message", "Server is healthy");
+	it("returns message equal to Server is healthy", async () => {
+		const res = await request(app).get("/health");
+		expect(res.status).toBe(httpStatus.OK);
+		expect(res.body).toHaveProperty("message", "Server is healthy");
 	});
 
-	it("works without any auth token (public endpoint)", async () => {
-		// No Authorization header or cookie — endpoint must still return 200
-		const response = await request(app)
-			.get("/health")
-			.unset("Authorization");
-
-		expect(response.status).toBe(httpStatus.OK);
-		expect(response.body).toHaveProperty("success", true);
+	it("returns 200 without an auth token (public endpoint)", async () => {
+		const res = await request(app).get("/health");
+		expect(res.status).toBe(httpStatus.OK);
+		expect(res.body).toHaveProperty("success", true);
 	});
 
-	it("uptime increases between two calls (second uptime >= first)", async () => {
+	it("returns uptime on second call that is >= uptime from first call", async () => {
 		const first = await request(app).get("/health");
 		const second = await request(app).get("/health");
-
+		expect(first.status).toBe(httpStatus.OK);
+		expect(second.status).toBe(httpStatus.OK);
 		expect(second.body.uptime).toBeGreaterThanOrEqual(first.body.uptime);
+	});
+
+	it("returns data field equal to Server is running smoothly", async () => {
+		const res = await request(app).get("/health");
+		expect(res.status).toBe(httpStatus.OK);
+		expect(res.body).toHaveProperty("data", "Server is running smoothly");
 	});
 });

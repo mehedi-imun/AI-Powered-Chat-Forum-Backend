@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/mehedi/web-development/projects/Chat\\ Forum\\ Application/backend && npx biome check --write \"${file}\" 2>/dev/null | grep -E '(fixed|error)' | head -5 || true"
+          }
+        ]
+      }
+    ]
+  }
+}
