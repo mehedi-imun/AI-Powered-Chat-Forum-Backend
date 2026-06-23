@@ -6,14 +6,14 @@ scrape_configs:
 # Backend metrics
 - job_name: "backend"
   static_configs:
-  - targets: [ "3.1.47.175:5000" ]
+  - targets: [ "backend:5000" ]
 
 # Prometheus self-monitoring
 - job_name: "prometheus"
   static_configs:
-  - targets: [ "3.1.47.175:9090" ]
+  - targets: [ "prometheus:9090" ]
 
 # RabbitMQ metrics
 - job_name: "rabbitmq"
   static_configs:
-  - targets: [ "3.1.47.175:15672" ] # RabbitMQ management port
+  - targets: [ "rabbitmq:15672" ]
