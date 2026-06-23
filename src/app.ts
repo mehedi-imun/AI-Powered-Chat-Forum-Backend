@@ -9,6 +9,7 @@ import env from "./config/env";
 import globalErrorHandler from "./middleware/globalErrorHandler";
 import { AdminRoutes } from "./modules/admin/admin.routes";
 import { AuthRoutes } from "./modules/auth/auth.routes";
+import { HealthRoutes } from "./modules/health/health.routes";
 import { NotificationRoutes } from "./modules/notification/notification.routes";
 import { PostRoutes } from "./modules/post/post.routes";
 import { ThreadRoutes } from "./modules/thread/thread.routes";
@@ -130,14 +131,7 @@ app.use("/api/v1/posts", PostRoutes);
 app.use("/api/v1/notifications", NotificationRoutes);
 app.use("/api/v1/admin", AdminRoutes);
 app.use("/api/v1/webhook", WebhookRoutes);
-app.get("/health", (_req, res) => {
-	res.status(200).json({
-		success: true,
-		message: "Server is healthy",
-		timestamp: new Date().toISOString(),
-		data: "Server is running smoothly",
-	});
-});
+app.use("/health", HealthRoutes);
 
 app.get("/", (_req, res) => {
 	res.json({
