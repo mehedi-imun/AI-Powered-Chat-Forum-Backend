@@ -43,7 +43,7 @@ const postSchema = new Schema<IPost>(
 		moderationStatus: {
 			type: String,
 			enum: ["pending", "approved", "flagged", "rejected"],
-			default: "approved", // Auto-approve for now, AI will check async
+			default: "pending",
 			index: true,
 		},
 		aiScore: {

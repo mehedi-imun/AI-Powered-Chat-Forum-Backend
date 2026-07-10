@@ -1,6 +1,9 @@
 import httpStatus from "http-status";
 import { Types } from "mongoose";
 import AppError from "../../errors/AppError";
+import { queueService } from "../../services/queue.service";
+import { FailedQueueJob } from "../failed-queue-job/failed-queue-job.model";
+import { FailedQueueJobService } from "../failed-queue-job/failed-queue-job.service";
 import { Post } from "../post/post.model";
 import { Thread } from "../thread/thread.model";
 import { User } from "../user/user.model";
@@ -86,9 +89,7 @@ const getUserStats = async () => {
 		User.countDocuments({ createdAt: { $gte: lastWeek } }),
 		User.countDocuments({ createdAt: { $gte: lastMonth } }),
 		Ban.countDocuments({ isActive: true }),
-		User.aggregate([
-			{ $group: { _id: "$role", count: { $sum: 1 } } },
-		]),
+		User.aggregate([{ $group: { _id: "$role", count: { $sum: 1 } } }]),
 	]);
 
 	return {
@@ -801,6 +802,30 @@ const updateSystemSettings = async (
 	return settings;
 };
 
+const getQueueHealth = async (): Promise<{
+	pendingModeration: number;
+	failedJobs: number;
+}> => {
+	const [pendingModeration, failedJobs] = await Promise.all([
+		Post.countDocuments({ moderationStatus: "pending", status: "active" }),
+		FailedQueueJobService.countPending(),
+	]);
+	return { pendingModeration, failedJobs };
+};
+
+const getFailedJobs = async (page: number, limit: number) => {
+	return FailedQueueJobService.getFailedJobs(page, limit);
+};
+
+const replayFailedJob = async (id: string) => {
+	const job = await FailedQueueJob.findById(id);
+	if (!job) throw new AppError(httpStatus.NOT_FOUND, "Failed job not found");
+	if (job.status === "replayed")
+		throw new AppError(httpStatus.BAD_REQUEST, "Job already replayed");
+	await queueService.publishToQueue(job.queue, job.payload);
+	return FailedQueueJobService.markReplayed(id);
+};
+
 export const AdminService = {
 	getDashboardStats,
 	getUserStats,
@@ -825,4 +850,8 @@ export const AdminService = {
 
 	getSystemSettings,
 	updateSystemSettings,
+
+	getQueueHealth,
+	getFailedJobs,
+	replayFailedJob,
 };

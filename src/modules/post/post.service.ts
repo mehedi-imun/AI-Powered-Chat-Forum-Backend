@@ -57,7 +57,7 @@ const createPost = async (
 		author: new Types.ObjectId(userId),
 		mentions: [],
 		status: "active",
-		moderationStatus: "approved",
+		moderationStatus: "pending",
 		isEdited: false,
 	});
 
@@ -266,6 +266,7 @@ const updatePost = async (
 	post.content = data.content;
 	post.isEdited = true;
 	post.editedAt = new Date();
+	post.moderationStatus = "pending";
 	await post.save();
 	await cacheService.del(`thread:summary:${post.threadId}`);
 
