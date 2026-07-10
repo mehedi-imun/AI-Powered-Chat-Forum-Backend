@@ -234,6 +234,39 @@ const updateSystemSettings = catchAsync(async (req, res) => {
 	});
 });
 
+const getQueueHealth = catchAsync(async (_req, res) => {
+	const result = await AdminService.getQueueHealth();
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Queue health retrieved",
+		data: result,
+	});
+});
+
+const getFailedJobs = catchAsync(async (req, res) => {
+	const page = Number(req.query.page) || 1;
+	const limit = Number(req.query.limit) || 10;
+	const result = await AdminService.getFailedJobs(page, limit);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Failed jobs retrieved",
+		meta: { page, limit, total: result.total, totalPage: result.totalPage },
+		data: result.jobs,
+	});
+});
+
+const replayFailedJob = catchAsync(async (req, res) => {
+	const result = await AdminService.replayFailedJob(req.params.id);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Job replayed successfully",
+		data: result,
+	});
+});
+
 export const AdminController = {
 	getDashboardStats,
 	getUserStats,
@@ -253,4 +286,7 @@ export const AdminController = {
 	getActivityLogs,
 	getSystemSettings,
 	updateSystemSettings,
+	getQueueHealth,
+	getFailedJobs,
+	replayFailedJob,
 };

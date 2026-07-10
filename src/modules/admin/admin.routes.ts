@@ -143,4 +143,25 @@ router.patch(
 	AdminController.updateSystemSettings,
 );
 
+router.get(
+	"/queue/health",
+	authenticate,
+	authorize("Admin", "Moderator"),
+	AdminController.getQueueHealth,
+);
+
+router.get(
+	"/queue/failed-jobs",
+	authenticate,
+	authorize("Admin"),
+	AdminController.getFailedJobs,
+);
+
+router.post(
+	"/queue/failed-jobs/:id/replay",
+	authenticate,
+	authorize("Admin"),
+	AdminController.replayFailedJob,
+);
+
 export const AdminRoutes = router;
