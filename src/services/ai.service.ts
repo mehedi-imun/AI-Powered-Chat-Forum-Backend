@@ -1,5 +1,84 @@
 import env from "../config/env";
+import { getRedisClient } from "../config/redis";
 import logger from "../utils/logger";
+
+// ─── Circuit breaker constants ────────────────────────────────────────────────
+
+const CIRCUIT_KEYS = {
+	state: "ai:circuit:state",
+	failures: "ai:circuit:failures",
+	openedAt: "ai:circuit:opened_at",
+};
+
+const FAILURE_THRESHOLD = 5;
+const OPEN_DURATION_MS = 120_000; // 2 minutes
+
+// ─── Circuit breaker error ────────────────────────────────────────────────────
+
+class CircuitOpenError extends Error {
+	constructor() {
+		super("AI circuit breaker is open — OpenRouter calls suspended");
+		this.name = "CircuitOpenError";
+	}
+}
+
+// ─── Circuit breaker helpers (internal) ──────────────────────────────────────
+
+const getCircuitState = async (): Promise<"closed" | "open" | "half-open"> => {
+	const redis = getRedisClient();
+	if (!redis) return "closed"; // fail open if Redis unavailable
+	try {
+		const state = await redis.get(CIRCUIT_KEYS.state);
+		return (state as "closed" | "open" | "half-open") || "closed";
+	} catch {
+		return "closed";
+	}
+};
+
+const setCircuitState = async (
+	state: "closed" | "open" | "half-open",
+): Promise<void> => {
+	const redis = getRedisClient();
+	if (!redis) return;
+	try {
+		await redis.set(CIRCUIT_KEYS.state, state);
+	} catch {
+		// ignore — fail open
+	}
+};
+
+const getFailures = async (): Promise<number> => {
+	const redis = getRedisClient();
+	if (!redis) return 0;
+	try {
+		const val = await redis.get(CIRCUIT_KEYS.failures);
+		return val ? Number.parseInt(val, 10) : 0;
+	} catch {
+		return 0;
+	}
+};
+
+const incrementFailures = async (): Promise<number> => {
+	const redis = getRedisClient();
+	if (!redis) return 0;
+	try {
+		return await redis.incr(CIRCUIT_KEYS.failures);
+	} catch {
+		return 0;
+	}
+};
+
+const resetFailures = async (): Promise<void> => {
+	const redis = getRedisClient();
+	if (!redis) return;
+	try {
+		await redis.set(CIRCUIT_KEYS.failures, "0");
+	} catch {
+		// ignore — fail open
+	}
+};
+
+// ─── OpenRouter wrapper with circuit breaker ─────────────────────────────────
 
 const callOpenRouter = async (
 	messages: Array<{ role: string; content: string }>,
@@ -8,6 +87,29 @@ const callOpenRouter = async (
 ): Promise<string> => {
 	if (!env.OPENROUTER_API_KEY) {
 		throw new Error("OpenRouter API key not configured");
+	}
+
+	// Circuit breaker pre-flight check
+	const state = await getCircuitState();
+
+	if (state === "open") {
+		const redis = getRedisClient();
+		let openedAt = 0;
+		try {
+			const val = redis ? await redis.get(CIRCUIT_KEYS.openedAt) : null;
+			openedAt = val ? Number.parseInt(val, 10) : 0;
+		} catch {
+			// ignore — treat openedAt as 0 (will transition to half-open)
+		}
+
+		if (Date.now() - openedAt < OPEN_DURATION_MS) {
+			// Still within the open window — reject immediately, no HTTP request
+			throw new CircuitOpenError();
+		}
+
+		// 2 min elapsed → transition to half-open and allow one probe through
+		await setCircuitState("half-open");
+		logger.info("AI circuit breaker: transitioning to half-open");
 	}
 
 	try {
@@ -19,8 +121,8 @@ const callOpenRouter = async (
 				method: "POST",
 				headers: {
 					Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
-					"HTTP-Referer": env.SITE_URL!,
-					"X-Title": env.SITE_NAME!,
+					"HTTP-Referer": env.SITE_URL ?? "",
+					"X-Title": env.SITE_NAME ?? "",
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify({
@@ -53,12 +155,43 @@ const callOpenRouter = async (
 			logger.error("Empty response from OpenRouter");
 		}
 
+		// SUCCESS — reset circuit
+		const currentState = await getCircuitState();
+		if (currentState === "half-open") {
+			await setCircuitState("closed");
+			logger.info("AI circuit breaker: closed (recovered from half-open)");
+		}
+		await resetFailures();
+
 		return content;
 	} catch (error) {
+		// Do not count a CircuitOpenError as a new failure
+		if (error instanceof CircuitOpenError) throw error;
+
+		// FAILURE — update circuit
+		const failures = await incrementFailures();
+		logger.warn(`AI circuit breaker: failure ${failures}/${FAILURE_THRESHOLD}`);
+
+		if (failures >= FAILURE_THRESHOLD) {
+			await setCircuitState("open");
+			const redis = getRedisClient();
+			try {
+				if (redis)
+					await redis.set(CIRCUIT_KEYS.openedAt, Date.now().toString());
+			} catch {
+				// ignore
+			}
+			logger.error(
+				`AI circuit breaker: OPEN after ${failures} consecutive failures`,
+			);
+		}
+
 		logger.error("OpenRouter API request failed");
 		throw error;
 	}
 };
+
+// ─── Interfaces ───────────────────────────────────────────────────────────────
 
 export interface IModerationResult {
 	isSpam: boolean;
@@ -77,6 +210,8 @@ export interface ISummaryResult {
 	wordCount: number;
 	sentimentScore: number; // -1 to 1 (negative to positive)
 }
+
+// ─── moderateContent ──────────────────────────────────────────────────────────
 
 export const moderateContent = async (
 	content: string,
@@ -152,6 +287,8 @@ Respond in JSON format:
 	}
 };
 
+// ─── generateThreadSummary ────────────────────────────────────────────────────
+
 export const generateThreadSummary = async (
 	posts: Array<{ content: string; author: string; createdAt: Date }>,
 ): Promise<ISummaryResult> => {
@@ -226,6 +363,8 @@ Respond in JSON format:
 	}
 };
 
+// ─── Mock fallbacks ───────────────────────────────────────────────────────────
+
 const mockModeration = (content: string): IModerationResult => {
 	if (!content) {
 		logger.error("Mock moderation received undefined content");
@@ -293,7 +432,30 @@ const mockSummary = (
 	};
 };
 
+// ─── Exported circuit breaker object ─────────────────────────────────────────
+
+export const circuitBreaker = {
+	getState: async (): Promise<"closed" | "open" | "half-open"> =>
+		getCircuitState(),
+	getFailures: async (): Promise<number> => getFailures(),
+	reset: async (): Promise<void> => {
+		await setCircuitState("closed");
+		await resetFailures();
+		const redis = getRedisClient();
+		if (redis) {
+			try {
+				await redis.del(CIRCUIT_KEYS.openedAt);
+			} catch {
+				// ignore
+			}
+		}
+	},
+};
+
+// ─── AIService export ─────────────────────────────────────────────────────────
+
 export const AIService = {
 	moderateContent,
 	generateThreadSummary,
+	circuitBreaker,
 };
