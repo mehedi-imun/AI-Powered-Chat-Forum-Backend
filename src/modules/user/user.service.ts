@@ -1,8 +1,9 @@
 import httpStatus from "http-status";
 import { Types } from "mongoose";
+import { cacheService } from "../../config/redis";
 import AppError from "../../errors/AppError";
 import QueryBuilder from "../../utils/queryBuilder";
-import { sanitizeInput, escapeHtml } from "../../utils/sanitize";
+import { escapeHtml, sanitizeInput } from "../../utils/sanitize";
 import type {
 	IUser,
 	IUserCreate,
@@ -40,10 +41,16 @@ const getUserById = async (id: string): Promise<IUserWithoutPassword> => {
 		throw new AppError(httpStatus.BAD_REQUEST, "Invalid user ID");
 	}
 
+	const cacheKey = `user:${id}`;
+	const cached = await cacheService.getJSON<IUserWithoutPassword>(cacheKey);
+	if (cached) return cached;
+
 	const user = await User.findById(id);
 	if (!user) {
 		throw new AppError(httpStatus.NOT_FOUND, "User not found");
 	}
+
+	await cacheService.setJSON(cacheKey, user, 300);
 
 	return user as IUserWithoutPassword;
 };
@@ -81,11 +88,11 @@ const updateUser = async (
 	}
 
 	const sanitizedData: IUserUpdate = { ...updateData };
-	
+
 	if (updateData.name) {
 		sanitizedData.name = escapeHtml(updateData.name);
 	}
-	
+
 	if (updateData.bio) {
 		sanitizedData.bio = sanitizeInput(updateData.bio);
 	}
@@ -99,6 +106,8 @@ const updateUser = async (
 		throw new AppError(httpStatus.NOT_FOUND, "User not found");
 	}
 
+	await cacheService.del(`user:${id}`);
+
 	return user as IUserWithoutPassword;
 };
 
@@ -111,6 +120,8 @@ const deleteUser = async (id: string): Promise<void> => {
 	if (!user) {
 		throw new AppError(httpStatus.NOT_FOUND, "User not found");
 	}
+
+	await cacheService.del(`user:${id}`);
 };
 
 export const UserService = {

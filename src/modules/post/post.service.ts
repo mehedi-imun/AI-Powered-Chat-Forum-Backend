@@ -1,6 +1,6 @@
 import httpStatus from "http-status";
 import { Types } from "mongoose";
-import { cacheService } from "../../config/redis";
+import { cacheService, getRedisClient } from "../../config/redis";
 import { getIO } from "../../config/socket";
 import AppError from "../../errors/AppError";
 import {
@@ -18,6 +18,18 @@ import type {
 	IPostWithAuthor,
 } from "./post.interface";
 import { Post } from "./post.model";
+
+const invalidatePostCache = async (threadId: string): Promise<void> => {
+	const pattern = `posts:thread:${threadId}:*`;
+	const client = getRedisClient();
+	if (!client) return;
+	try {
+		const keys = await client.keys(pattern);
+		if (keys.length > 0) await client.del(...keys);
+	} catch {
+		// silent — cache miss is acceptable
+	}
+};
 
 const createPost = async (
 	data: IPostCreate,
@@ -63,6 +75,7 @@ const createPost = async (
 
 	await ThreadService.incrementPostCount(threadId);
 	await cacheService.del(`thread:summary:${threadId}`);
+	await invalidatePostCache(threadId);
 
 	const mentionMatches = content.match(/@(\w+)/g);
 	if (mentionMatches) {
@@ -154,6 +167,13 @@ const getPostsByThread = async (
 	page = 1,
 	limit = 20,
 ): Promise<{ posts: IPostWithAuthor[]; total: number }> => {
+	const cacheKey = `posts:thread:${threadId}:page:${page}:limit:${limit}`;
+	const cached = await cacheService.getJSON<{
+		posts: IPostWithAuthor[];
+		total: number;
+	}>(cacheKey);
+	if (cached) return cached;
+
 	const skip = (page - 1) * limit;
 
 	const [result] = await Post.aggregate([
@@ -278,10 +298,14 @@ const getPostsByThread = async (
 		},
 	]);
 
-	return {
+	const freshResult = {
 		posts: (result?.posts ?? []) as IPostWithAuthor[],
 		total: result?.total[0]?.count ?? 0,
 	};
+
+	await cacheService.setJSON(cacheKey, freshResult, 60);
+
+	return freshResult;
 };
 
 const getPostReplies = async (
@@ -367,6 +391,7 @@ const updatePost = async (
 	post.moderationStatus = "pending";
 	await post.save();
 	await cacheService.del(`thread:summary:${post.threadId}`);
+	await invalidatePostCache(post.threadId.toString());
 
 	await publishAIModeration({
 		postId: post._id?.toString(),
@@ -414,6 +439,7 @@ const deletePost = async (id: string, userId: string): Promise<void> => {
 	post.status = "deleted";
 	await post.save();
 	await cacheService.del(`thread:summary:${threadId}`);
+	await invalidatePostCache(threadId);
 
 	await ThreadService.decrementPostCount(threadId);
 

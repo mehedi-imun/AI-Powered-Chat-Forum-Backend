@@ -1,8 +1,9 @@
-import logger from "../../utils/logger";
 import httpStatus from "http-status";
 import { Types } from "mongoose";
+import { cacheService } from "../../config/redis";
 import { getIO } from "../../config/socket";
 import AppError from "../../errors/AppError";
+import logger from "../../utils/logger";
 import type {
 	INotification,
 	INotificationCreate,
@@ -31,6 +32,8 @@ const createNotification = async (
 			: undefined,
 		isRead: false,
 	});
+
+	await cacheService.del(`notifications:unread:${data.userId}`);
 
 	const io = getIO();
 	if (io) {
@@ -135,6 +138,8 @@ const markAsRead = async (
 		notification.readAt = new Date();
 		await notification.save();
 
+		await cacheService.del(`notifications:unread:${userId}`);
+
 		const io = getIO();
 		if (io) {
 			const unreadCount = await Notification.countDocuments({
@@ -167,6 +172,8 @@ const markAllAsRead = async (
 		},
 	);
 
+	await cacheService.del(`notifications:unread:${userId}`);
+
 	const io = getIO();
 	if (io) {
 		io.to(`user:${userId}`).emit("notification:all_read", {
@@ -191,6 +198,8 @@ const deleteNotification = async (
 	}
 
 	await Notification.findByIdAndDelete(id);
+
+	await cacheService.del(`notifications:unread:${userId}`);
 
 	const io = getIO();
 	if (io) {
@@ -219,10 +228,18 @@ const deleteAllRead = async (
 };
 
 const getUnreadCount = async (userId: string): Promise<number> => {
-	return await Notification.countDocuments({
+	const cacheKey = `notifications:unread:${userId}`;
+	const cachedValue = await cacheService.get(cacheKey);
+	if (cachedValue !== null) return Number.parseInt(cachedValue, 10);
+
+	const count = await Notification.countDocuments({
 		userId: new Types.ObjectId(userId),
 		isRead: false,
 	});
+
+	await cacheService.set(cacheKey, count.toString(), 30);
+
+	return count;
 };
 
 const createMentionNotification = async (
@@ -296,9 +313,7 @@ const createThreadCreatedNotification = async (
 		link: `/threads/${threadId}`,
 		relatedThreadId: threadId,
 	});
-	logger.info(
-		`Thread notification created with ID: ${notification._id}`,
-	);
+	logger.info(`Thread notification created with ID: ${notification._id}`);
 };
 
 const createAIModerationRejectedNotification = async (
