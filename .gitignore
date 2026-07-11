@@ -47,4 +47,7 @@ temp/
 
 # Debug
 .pnp.*
-.yarn/*coverage-queue/
+.yarn/*
+
+# Test coverage output dirs
+coverage-queue/
