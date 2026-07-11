@@ -154,35 +154,133 @@ const getPostsByThread = async (
 	page = 1,
 	limit = 20,
 ): Promise<{ posts: IPostWithAuthor[]; total: number }> => {
-	const posts = await Post.find({
-		threadId,
-		parentId: null,
-		status: "active",
-	})
-		.populate("author", "name email role")
-		.skip((page - 1) * limit)
-		.limit(limit)
-		.sort({ createdAt: 1 }); // Oldest first
+	const skip = (page - 1) * limit;
 
-	const postsWithReplies = await Promise.all(
-		posts.map(async (post) => {
-			const replies = await getPostReplies(post._id?.toString());
-			return {
-				...post.toObject(),
-				replies,
-			} as unknown as IPostWithAuthor;
-		}),
-	);
-
-	const total = await Post.countDocuments({
-		threadId,
-		parentId: null,
-		status: "active",
-	});
+	const [result] = await Post.aggregate([
+		{
+			$facet: {
+				posts: [
+					{
+						$match: {
+							threadId: new Types.ObjectId(threadId),
+							parentId: null,
+							status: "active",
+						},
+					},
+					{ $sort: { createdAt: 1 } },
+					{ $skip: skip },
+					{ $limit: limit },
+					{
+						$lookup: {
+							from: "users",
+							localField: "author",
+							foreignField: "_id",
+							as: "authorData",
+							pipeline: [
+								{ $project: { name: 1, email: 1, role: 1, avatar: 1 } },
+							],
+						},
+					},
+					{ $addFields: { author: { $arrayElemAt: ["$authorData", 0] } } },
+					{ $unset: "authorData" },
+					{
+						$lookup: {
+							from: "posts",
+							let: { postId: "$_id" },
+							pipeline: [
+								{
+									$match: {
+										$expr: {
+											$and: [
+												{ $eq: ["$parentId", "$$postId"] },
+												{ $eq: ["$status", "active"] },
+											],
+										},
+									},
+								},
+								{ $sort: { createdAt: 1 } },
+								{
+									$lookup: {
+										from: "users",
+										localField: "author",
+										foreignField: "_id",
+										as: "authorData",
+										pipeline: [
+											{ $project: { name: 1, email: 1, role: 1, avatar: 1 } },
+										],
+									},
+								},
+								{
+									$addFields: { author: { $arrayElemAt: ["$authorData", 0] } },
+								},
+								{ $unset: "authorData" },
+								{
+									$lookup: {
+										from: "posts",
+										let: { replyId: "$_id" },
+										pipeline: [
+											{
+												$match: {
+													$expr: {
+														$and: [
+															{ $eq: ["$parentId", "$$replyId"] },
+															{ $eq: ["$status", "active"] },
+														],
+													},
+												},
+											},
+											{ $sort: { createdAt: 1 } },
+											{
+												$lookup: {
+													from: "users",
+													localField: "author",
+													foreignField: "_id",
+													as: "authorData",
+													pipeline: [
+														{
+															$project: {
+																name: 1,
+																email: 1,
+																role: 1,
+																avatar: 1,
+															},
+														},
+													],
+												},
+											},
+											{
+												$addFields: {
+													author: { $arrayElemAt: ["$authorData", 0] },
+												},
+											},
+											{ $unset: "authorData" },
+											{ $addFields: { replies: [] } },
+										],
+										as: "replies",
+									},
+								},
+							],
+							as: "replies",
+						},
+					},
+				],
+				total: [
+					{
+						$match: {
+							threadId: new Types.ObjectId(threadId),
+							parentId: null,
+							status: "active",
+						},
+					},
+					{ $count: "count" },
+				],
+			},
+		},
+	]);
 
 	return {
-		posts: postsWithReplies,
-		total,
+		posts: (result?.posts ?? []) as IPostWithAuthor[],
+		total: result?.total[0]?.count ?? 0,
 	};
 };
 

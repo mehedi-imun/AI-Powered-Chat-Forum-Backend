@@ -75,11 +75,12 @@ const threadSchema = new Schema<IThread>(
 	},
 );
 
-threadSchema.index({ title: "text", description: "text" }); // Full-text search
+threadSchema.index({ title: "text", description: "text" });
 threadSchema.index({ createdBy: 1, status: 1 });
 threadSchema.index({ tags: 1, status: 1 });
 threadSchema.index({ lastActivityAt: -1 });
 threadSchema.index({ createdAt: -1 });
+threadSchema.index({ status: 1, createdAt: -1 });
 
 threadSchema.virtual("posts", {
 	ref: "Post",

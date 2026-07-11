@@ -89,9 +89,15 @@ const postSchema = new Schema<IPost>(
 );
 
 postSchema.index({ threadId: 1, status: 1, createdAt: 1 });
-postSchema.index({ threadId: 1, parentId: 1, status: 1 });
-postSchema.index({ author: 1, status: 1 });
 postSchema.index({ moderationStatus: 1, createdAt: -1 });
+postSchema.index({ threadId: 1, parentId: 1, status: 1, createdAt: 1 });
+postSchema.index({ author: 1, status: 1, createdAt: -1 });
+postSchema.index({ moderationStatus: 1, status: 1, createdAt: -1 });
+postSchema.index({
+	"aiScore.spam": 1,
+	"aiScore.toxicity": 1,
+	"aiScore.inappropriate": 1,
+});
 
 postSchema.virtual("replies", {
 	ref: "Post",
