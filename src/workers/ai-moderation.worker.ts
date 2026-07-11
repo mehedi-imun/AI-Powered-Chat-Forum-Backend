@@ -176,6 +176,8 @@ export const startAIModerationWorker = async (): Promise<void> => {
 
 				await post.save();
 
+				await cacheService.del("admin:ai:moderation:summary");
+
 				logger.info(
 					`Moderation complete for post ${postId}: ${moderationResult.recommendation}`,
 				);

@@ -1,5 +1,6 @@
 import httpStatus from "http-status";
 import { Types } from "mongoose";
+import { cacheService } from "../../config/redis";
 import AppError from "../../errors/AppError";
 import { queueService } from "../../services/queue.service";
 import { FailedQueueJob } from "../failed-queue-job/failed-queue-job.model";
@@ -21,6 +22,11 @@ import type {
 import { ActivityLog, Ban, Report, SystemSettings } from "./admin.model";
 
 const getDashboardStats = async (): Promise<IDashboardStats> => {
+	const STATS_CACHE_KEY = "admin:dashboard:stats";
+	const cachedStats =
+		await cacheService.getJSON<IDashboardStats>(STATS_CACHE_KEY);
+	if (cachedStats) return cachedStats;
+
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 
@@ -48,7 +54,7 @@ const getDashboardStats = async (): Promise<IDashboardStats> => {
 		Ban.countDocuments({ isActive: true }),
 	]);
 
-	return {
+	const stats = {
 		totalUsers,
 		totalThreads,
 		totalPosts,
@@ -60,6 +66,10 @@ const getDashboardStats = async (): Promise<IDashboardStats> => {
 		pendingReports,
 		bannedUsers,
 	};
+
+	await cacheService.setJSON(STATS_CACHE_KEY, stats, 60);
+
+	return stats;
 };
 
 const getUserStats = async () => {
@@ -209,6 +219,10 @@ const getPostStats = async () => {
 };
 
 const getAIModerationSummary = async () => {
+	const SUMMARY_CACHE_KEY = "admin:ai:moderation:summary";
+	const cachedSummary = await cacheService.getJSON(SUMMARY_CACHE_KEY);
+	if (cachedSummary) return cachedSummary;
+
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 
@@ -282,7 +296,7 @@ const getAIModerationSummary = async () => {
 		avgInappropriate: 0,
 	};
 
-	return {
+	const summary = {
 		totalModerated,
 		moderatedToday,
 		moderatedThisWeek,
@@ -300,7 +314,7 @@ const getAIModerationSummary = async () => {
 		highRiskCount: highRiskPosts,
 		recentActions: recentActions.map((post: any) => ({
 			_id: post._id,
-			content: post.content.substring(0, 100) + "...",
+			content: `${post.content.substring(0, 100)}...`,
 			moderationStatus: post.moderationStatus,
 			aiScore: post.aiScore,
 			aiReasoning: post.aiReasoning,
@@ -314,6 +328,10 @@ const getAIModerationSummary = async () => {
 			createdAt: post.createdAt,
 		})),
 	};
+
+	await cacheService.setJSON(SUMMARY_CACHE_KEY, summary, 120);
+
+	return summary;
 };
 
 const getAllUsers = async (filters: IUserFilter) => {
