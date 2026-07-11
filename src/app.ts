@@ -2,11 +2,11 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import promBundle from "express-prom-bundle";
-import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import pinoHttp from "pino-http";
 import env from "./config/env";
 import globalErrorHandler from "./middleware/globalErrorHandler";
+import { createRateLimiter } from "./middleware/rateLimiter";
 import { AdminRoutes } from "./modules/admin/admin.routes";
 import { AuthRoutes } from "./modules/auth/auth.routes";
 import { HealthRoutes } from "./modules/health/health.routes";
@@ -106,12 +106,27 @@ app.use(
 
 app.use(helmet());
 
-const authLimiter = rateLimit({
+const authLimiter = createRateLimiter({
 	windowMs: env.RATE_LIMIT_WINDOW_MS,
 	max: Math.min(env.RATE_LIMIT_MAX_REQUESTS, 20),
+	prefix: "rl:auth:",
 	message: "Too many auth requests from this IP, please try again later.",
-	standardHeaders: true,
-	legacyHeaders: false,
+});
+
+const postLimiter = createRateLimiter({
+	windowMs: 60000,
+	max: 10,
+	prefix: "rl:posts:",
+	message: "Too many post requests from this IP, please try again later.",
+	skipRead: true,
+});
+
+const threadLimiter = createRateLimiter({
+	windowMs: 60000,
+	max: 5,
+	prefix: "rl:threads:",
+	message: "Too many thread requests from this IP, please try again later.",
+	skipRead: true,
 });
 
 app.use(
@@ -126,8 +141,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use("/api/v1/auth", authLimiter, AuthRoutes);
 app.use("/api/v1/users", UserRoutes);
-app.use("/api/v1/threads", ThreadRoutes);
-app.use("/api/v1/posts", PostRoutes);
+app.use("/api/v1/threads", threadLimiter, ThreadRoutes);
+app.use("/api/v1/posts", postLimiter, PostRoutes);
 app.use("/api/v1/notifications", NotificationRoutes);
 app.use("/api/v1/admin", AdminRoutes);
 app.use("/api/v1/webhook", WebhookRoutes);

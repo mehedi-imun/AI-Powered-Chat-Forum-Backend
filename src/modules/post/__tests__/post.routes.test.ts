@@ -27,6 +27,13 @@ import { Post } from "../post.model";
 // Mocks — prevent real queue/socket connections
 // ---------------------------------------------------------------------------
 
+// Bypass rate limiting in route tests: the per-IP in-memory counter accumulates
+// across test cases within this file and causes 429s on mutation-heavy suites.
+jest.mock("../../../middleware/rateLimiter", () => ({
+	createRateLimiter: () =>
+		(_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+
 jest.mock("../../../config/rabbitmq", () => ({
 	getRabbitMQChannel: jest.fn().mockReturnValue(null),
 	connectRabbitMQ: jest.fn().mockResolvedValue(undefined),
