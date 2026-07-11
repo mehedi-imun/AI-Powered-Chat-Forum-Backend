@@ -12,14 +12,14 @@
  *   GET    /api/v1/posts/flagged/all        — getFlaggedPosts  (auth + Admin)
  */
 
-import request from "supertest";
 import { Types } from "mongoose";
-import app from "../../../app";
+import request from "supertest";
 import {
-	createTestUser,
 	createTestAdmin,
+	createTestUser,
 	generateTestToken,
 } from "../../../__tests__/utils/testHelpers";
+import app from "../../../app";
 import { Thread } from "../../thread/thread.model";
 import { Post } from "../post.model";
 
@@ -30,8 +30,8 @@ import { Post } from "../post.model";
 // Bypass rate limiting in route tests: the per-IP in-memory counter accumulates
 // across test cases within this file and causes 429s on mutation-heavy suites.
 jest.mock("../../../middleware/rateLimiter", () => ({
-	createRateLimiter: () =>
-		(_req: unknown, _res: unknown, next: () => void) => next(),
+	createRateLimiter: () => (_req: unknown, _res: unknown, next: () => void) =>
+		next(),
 }));
 
 jest.mock("../../../config/rabbitmq", () => ({
@@ -150,9 +150,13 @@ describe("GET /api/v1/posts/flagged/all", () => {
 		const token = generateTestToken(admin._id!, "Admin");
 
 		const thread = await seedThread((admin._id as Types.ObjectId).toString());
-		await seedPost((thread._id as Types.ObjectId).toString(), (admin._id as Types.ObjectId).toString(), {
-			moderationStatus: "flagged",
-		});
+		await seedPost(
+			(thread._id as Types.ObjectId).toString(),
+			(admin._id as Types.ObjectId).toString(),
+			{
+				moderationStatus: "flagged",
+			},
+		);
 
 		const res = await request(app)
 			.get("/api/v1/posts/flagged/all")
@@ -295,7 +299,10 @@ describe("GET /api/v1/posts/:id", () => {
 		const user = await createTestUser();
 		const userId = (user._id as Types.ObjectId).toString();
 		const thread = await seedThread(userId);
-		const post = await seedPost((thread._id as Types.ObjectId).toString(), userId);
+		const post = await seedPost(
+			(thread._id as Types.ObjectId).toString(),
+			userId,
+		);
 		const postId = (post._id as Types.ObjectId).toString();
 
 		const res = await request(app).get(`/api/v1/posts/${postId}`);
@@ -448,7 +455,10 @@ describe("PATCH /api/v1/posts/:id", () => {
 		const userId = (user._id as Types.ObjectId).toString();
 		const token = generateTestToken(user._id!, "Member");
 		const thread = await seedThread(userId);
-		const post = await seedPost((thread._id as Types.ObjectId).toString(), userId);
+		const post = await seedPost(
+			(thread._id as Types.ObjectId).toString(),
+			userId,
+		);
 		const postId = (post._id as Types.ObjectId).toString();
 
 		const res = await request(app)
@@ -508,7 +518,10 @@ describe("DELETE /api/v1/posts/:id", () => {
 		const userId = (user._id as Types.ObjectId).toString();
 		const token = generateTestToken(user._id!, "Member");
 		const thread = await seedThread(userId);
-		const post = await seedPost((thread._id as Types.ObjectId).toString(), userId);
+		const post = await seedPost(
+			(thread._id as Types.ObjectId).toString(),
+			userId,
+		);
 		const postId = (post._id as Types.ObjectId).toString();
 
 		const res = await request(app)
@@ -524,7 +537,10 @@ describe("DELETE /api/v1/posts/:id", () => {
 		const userId = (user._id as Types.ObjectId).toString();
 		const token = generateTestToken(user._id!, "Member");
 		const thread = await seedThread(userId);
-		const post = await seedPost((thread._id as Types.ObjectId).toString(), userId);
+		const post = await seedPost(
+			(thread._id as Types.ObjectId).toString(),
+			userId,
+		);
 		const postId = (post._id as Types.ObjectId).toString();
 
 		await request(app)

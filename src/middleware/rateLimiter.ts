@@ -57,10 +57,26 @@ export const createRateLimiter = (
 					validate: { creationStack: false },
 					store: new RedisStore({
 						prefix,
-						sendCommand: (...args: string[]) =>
-							client.call(...(args as [string, ...string[]])) as Promise<
+						// Resolve the client on every command instead of capturing the
+						// instance seen at construction time — if Redis disconnects and
+						// reconnects with a fresh ioredis instance, the store must not
+						// keep talking to the dead one. The per-request readiness check
+						// above guarantees a ready client exists whenever this limiter
+						// is selected; the guard below covers the narrow race where the
+						// client is torn down mid-request.
+						sendCommand: (...args: string[]) => {
+							const current = getRedisClient();
+							if (!current || current.status !== "ready") {
+								return Promise.reject(
+									new Error("Redis client unavailable for rate limiting"),
+								);
+							}
+							return current.call(
+								...(args as [string, ...string[]]),
+							) as Promise<
 								string | number | boolean | (string | number | boolean)[]
-							>,
+							>;
+						},
 					}),
 				});
 			} catch {

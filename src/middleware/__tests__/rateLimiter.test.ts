@@ -32,11 +32,11 @@ jest.mock("rate-limit-redis", () => {
 	};
 });
 
+import { MemoryStore } from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+import { getRedisClient } from "../../config/redis";
 // Import AFTER mocks are in place.
 import { createRateLimiter } from "../rateLimiter";
-import { getRedisClient } from "../../config/redis";
-import { RedisStore } from "rate-limit-redis";
-import { MemoryStore } from "express-rate-limit";
 
 // ---------------------------------------------------------------------------
 // Helper: build a minimal Express app that mounts a single test route guarded
@@ -77,11 +77,17 @@ const buildApp = (
 const buildSkipReadApp = (limiter: express.RequestHandler): Application => {
 	const app = express();
 	app.use(express.json());
-	app.get("/test", limiter, (_req, res) => res.status(200).json({ success: true }));
-	app.post("/test", limiter, (_req, res) => res.status(200).json({ success: true }));
+	app.get("/test", limiter, (_req, res) =>
+		res.status(200).json({ success: true }),
+	);
+	app.post("/test", limiter, (_req, res) =>
+		res.status(200).json({ success: true }),
+	);
 	app.head("/test", limiter, (_req, res) => res.status(200).end());
 	app.options("/test", limiter, (_req, res) => res.status(200).end());
-	app.delete("/test", limiter, (_req, res) => res.status(200).json({ success: true }));
+	app.delete("/test", limiter, (_req, res) =>
+		res.status(200).json({ success: true }),
+	);
 	return app;
 };
 
@@ -298,7 +304,11 @@ describe("createRateLimiter — skipRead: false (default)", () => {
 	});
 
 	it("GET requests consume the budget when skipRead is false", async () => {
-		const limiter = createRateLimiter({ ...BASE_OPTS, max: 2, skipRead: false });
+		const limiter = createRateLimiter({
+			...BASE_OPTS,
+			max: 2,
+			skipRead: false,
+		});
 		const app = buildSkipReadApp(limiter);
 
 		await request(app).get("/test");
@@ -318,8 +328,16 @@ describe("createRateLimiter — separate instances have independent counters", (
 	});
 
 	it("exhausting one limiter does not affect a different limiter instance", async () => {
-		const limiterA = createRateLimiter({ ...BASE_OPTS, prefix: "rl:a:", max: 2 });
-		const limiterB = createRateLimiter({ ...BASE_OPTS, prefix: "rl:b:", max: 2 });
+		const limiterA = createRateLimiter({
+			...BASE_OPTS,
+			prefix: "rl:a:",
+			max: 2,
+		});
+		const limiterB = createRateLimiter({
+			...BASE_OPTS,
+			prefix: "rl:b:",
+			max: 2,
+		});
 
 		const appA = buildApp(limiterA);
 		const appB = buildApp(limiterB);
@@ -358,7 +376,9 @@ describe("createRateLimiter — Redis-backed path (mocked ready client)", () => 
 		// resetMocks: true (jest.config.ts) clears mockImplementation between tests,
 		// so we must re-establish the RedisStore mock implementation here so that
 		// `new RedisStore(...)` returns a valid MemoryStore-backed store instance.
-		(RedisStore as unknown as jest.Mock).mockImplementation(() => new MemoryStore());
+		(RedisStore as unknown as jest.Mock).mockImplementation(
+			() => new MemoryStore(),
+		);
 	});
 
 	it("uses the RedisStore when client status is 'ready'", async () => {
@@ -372,9 +392,11 @@ describe("createRateLimiter — Redis-backed path (mocked ready client)", () => 
 		// RedisStore should have been instantiated exactly once (lazy init).
 		expect(RedisStore).toHaveBeenCalledTimes(1);
 		// The store was constructed with the correct prefix.
-		expect((RedisStore as unknown as jest.Mock).mock.calls[0][0]).toMatchObject({
-			prefix: BASE_OPTS.prefix,
-		});
+		expect((RedisStore as unknown as jest.Mock).mock.calls[0][0]).toMatchObject(
+			{
+				prefix: BASE_OPTS.prefix,
+			},
+		);
 	});
 
 	it("RedisStore sendCommand references the active Redis client", async () => {
@@ -385,7 +407,8 @@ describe("createRateLimiter — Redis-backed path (mocked ready client)", () => 
 
 		// Extract the sendCommand passed to RedisStore and invoke it to confirm
 		// it delegates to client.call().
-		const storeCtorOptions = (RedisStore as unknown as jest.Mock).mock.calls[0][0] as {
+		const storeCtorOptions = (RedisStore as unknown as jest.Mock).mock
+			.calls[0][0] as {
 			sendCommand: (...args: string[]) => Promise<unknown>;
 		};
 		await storeCtorOptions.sendCommand("PING");
@@ -435,7 +458,10 @@ describe("createRateLimiter — Redis-backed path (mocked ready client)", () => 
 // ===========================================================================
 describe("createRateLimiter — Redis client not ready → falls back to in-memory", () => {
 	beforeEach(() => {
-		(getRedisClient as jest.Mock).mockReturnValue({ status: "connecting", call: jest.fn() });
+		(getRedisClient as jest.Mock).mockReturnValue({
+			status: "connecting",
+			call: jest.fn(),
+		});
 		(RedisStore as unknown as jest.Mock).mockClear();
 	});
 
@@ -470,7 +496,11 @@ describe("createRateLimiter — custom message propagation", () => {
 
 	it("uses the configured message in both top-level field and errorSources", async () => {
 		const customMsg = "Slow down! You are posting too fast.";
-		const limiter = createRateLimiter({ ...BASE_OPTS, max: 1, message: customMsg });
+		const limiter = createRateLimiter({
+			...BASE_OPTS,
+			max: 1,
+			message: customMsg,
+		});
 		const app = buildApp(limiter);
 
 		await request(app).post("/test").send({});
