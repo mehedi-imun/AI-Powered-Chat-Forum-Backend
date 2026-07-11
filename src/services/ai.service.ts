@@ -1,93 +1,93 @@
-import logger from "../utils/logger";
 import env from "../config/env";
+import logger from "../utils/logger";
 
 const callOpenRouter = async (
-  messages: Array<{ role: string; content: string }>,
-  temperature = 0.5,
-  maxTokens = 500
+	messages: Array<{ role: string; content: string }>,
+	temperature = 0.5,
+	maxTokens = 500,
 ): Promise<string> => {
-  if (!env.OPENROUTER_API_KEY) {
-    throw new Error("OpenRouter API key not configured");
-  }
+	if (!env.OPENROUTER_API_KEY) {
+		throw new Error("OpenRouter API key not configured");
+	}
 
-  try {
-    logger.info(`Calling OpenRouter API with model: ${env.OPENROUTER_MODEL}`);
+	try {
+		logger.info(`Calling OpenRouter API with model: ${env.OPENROUTER_MODEL}`);
 
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
-          "HTTP-Referer": env.SITE_URL!,
-          "X-Title": env.SITE_NAME!,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: env.OPENROUTER_MODEL || "minimax/minimax-m2:free",
-          messages: messages,
-          temperature: temperature,
-          max_tokens: maxTokens,
-        }),
-      }
-    );
+		const response = await fetch(
+			"https://openrouter.ai/api/v1/chat/completions",
+			{
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+					"HTTP-Referer": env.SITE_URL!,
+					"X-Title": env.SITE_NAME!,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					model: env.OPENROUTER_MODEL || "minimax/minimax-m2:free",
+					messages: messages,
+					temperature: temperature,
+					max_tokens: maxTokens,
+				}),
+			},
+		);
 
-    logger.info(`OpenRouter response status: ${response.status}`);
+		logger.info(`OpenRouter response status: ${response.status}`);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      logger.error("OpenRouter API error response");
-      throw new Error(
-        `OpenRouter API error: ${response.status} - ${errorText}`
-      );
-    }
+		if (!response.ok) {
+			const errorText = await response.text();
+			logger.error("OpenRouter API error response");
+			throw new Error(
+				`OpenRouter API error: ${response.status} - ${errorText}`,
+			);
+		}
 
-    const data = await response.json();
-    logger.info(
-      "OpenRouter data received, choices:",
-      data.choices?.length || 0
-    );
+		const data = await response.json();
+		logger.info(
+			"OpenRouter data received, choices:",
+			data.choices?.length || 0,
+		);
 
-    const content = data.choices[0]?.message?.content || "";
-    if (!content) {
-      logger.error("Empty response from OpenRouter");
-    }
+		const content = data.choices[0]?.message?.content || "";
+		if (!content) {
+			logger.error("Empty response from OpenRouter");
+		}
 
-    return content;
-  } catch (error) {
-    logger.error("OpenRouter API request failed");
-    throw error;
-  }
+		return content;
+	} catch (error) {
+		logger.error("OpenRouter API request failed");
+		throw error;
+	}
 };
 
 export interface IModerationResult {
-  isSpam: boolean;
-  isToxic: boolean;
-  isInappropriate: boolean;
-  spamScore: number; // 0-1
-  toxicityScore: number; // 0-1
-  inappropriateScore: number; // 0-1
-  recommendation: "approve" | "review" | "reject";
-  reasoning: string;
+	isSpam: boolean;
+	isToxic: boolean;
+	isInappropriate: boolean;
+	spamScore: number; // 0-1
+	toxicityScore: number; // 0-1
+	inappropriateScore: number; // 0-1
+	recommendation: "approve" | "review" | "reject";
+	reasoning: string;
 }
 
 export interface ISummaryResult {
-  summary: string;
-  keyPoints: string[];
-  wordCount: number;
-  sentimentScore: number; // -1 to 1 (negative to positive)
+	summary: string;
+	keyPoints: string[];
+	wordCount: number;
+	sentimentScore: number; // -1 to 1 (negative to positive)
 }
 
 export const moderateContent = async (
-  content: string
+	content: string,
 ): Promise<IModerationResult> => {
-  try {
-    if (!env.OPENROUTER_API_KEY) {
-      logger.warn("OpenRouter API key not configured, using mock moderation");
-      return mockModeration(content);
-    }
+	try {
+		if (!env.OPENROUTER_API_KEY) {
+			logger.warn("OpenRouter API key not configured, using mock moderation");
+			return mockModeration(content);
+		}
 
-    const prompt = `Analyze the following content for moderation purposes. Rate it on three dimensions:
+		const prompt = `Analyze the following content for moderation purposes. Rate it on three dimensions:
 1. Spam (promotional content, repetitive, off-topic)
 2. Toxicity (offensive language, hate speech, harassment)
 3. Inappropriate (adult content, violence, illegal activities)
@@ -110,68 +110,67 @@ Respond in JSON format:
   "reasoning": "explanation here"
 }`;
 
-    const responseText = await callOpenRouter(
-      [
-        {
-          role: "system",
-          content:
-            "You are a content moderation AI. Analyze text and provide moderation scores in JSON format.",
-        },
-        { role: "user", content: prompt },
-      ],
-      0.3,
-      300
-    );
+		const responseText = await callOpenRouter(
+			[
+				{
+					role: "system",
+					content: "Content moderator. Return only valid JSON.",
+				},
+				{ role: "user", content: prompt },
+			],
+			0.3,
+			200,
+		);
 
-    logger.info({
-      msg: "OpenRouter response",
-      response: responseText.substring(0, 200),
-    });
+		logger.info({
+			msg: "OpenRouter response",
+			response: responseText.substring(0, 200),
+		});
 
-    let jsonText = responseText.trim();
-    if (jsonText.includes("```json")) {
-      jsonText = jsonText.split("```json")[1].split("```")[0].trim();
-    } else if (jsonText.includes("```")) {
-      jsonText = jsonText.split("```")[1].split("```")[0].trim();
-    }
+		let jsonText = responseText.trim();
+		if (jsonText.includes("```json")) {
+			jsonText = jsonText.split("```json")[1].split("```")[0].trim();
+		} else if (jsonText.includes("```")) {
+			jsonText = jsonText.split("```")[1].split("```")[0].trim();
+		}
 
-    const result = JSON.parse(jsonText);
+		const result = JSON.parse(jsonText);
 
-    return {
-      isSpam: result.spamScore > 0.3,
-      isToxic: result.toxicityScore > 0.3,
-      isInappropriate: result.inappropriateScore > 0.3,
-      spamScore: result.spamScore,
-      toxicityScore: result.toxicityScore,
-      inappropriateScore: result.inappropriateScore,
-      recommendation: result.recommendation,
-      reasoning: result.reasoning,
-    };
-  } catch (error) {
-    logger.error("AI moderation error");
-    return mockModeration(content);
-  }
+		return {
+			isSpam: result.spamScore > 0.3,
+			isToxic: result.toxicityScore > 0.3,
+			isInappropriate: result.inappropriateScore > 0.3,
+			spamScore: result.spamScore,
+			toxicityScore: result.toxicityScore,
+			inappropriateScore: result.inappropriateScore,
+			recommendation: result.recommendation,
+			reasoning: result.reasoning,
+		};
+	} catch (_error) {
+		logger.error("AI moderation error");
+		return mockModeration(content);
+	}
 };
 
 export const generateThreadSummary = async (
-  posts: Array<{ content: string; author: string; createdAt: Date }>
+	posts: Array<{ content: string; author: string; createdAt: Date }>,
 ): Promise<ISummaryResult> => {
-  try {
-    if (!env.OPENROUTER_API_KEY) {
-      logger.warn("OpenRouter API key not configured, using mock summary");
-      return mockSummary(posts);
-    }
+	try {
+		if (!env.OPENROUTER_API_KEY) {
+			logger.warn("OpenRouter API key not configured, using mock summary");
+			return mockSummary(posts);
+		}
 
-    const formattedPosts = posts
-      .map(
-        (post, idx) =>
-          `Post ${idx + 1} (by ${
-            post.author
-          } at ${post.createdAt.toISOString()}):\n${post.content}`
-      )
-      .join("\n\n---\n\n");
+		const formattedPosts = posts
+			.map(
+				(post, idx) =>
+					`Post ${idx + 1} (by ${
+						post.author
+					} at ${post.createdAt.toISOString()}):\n${post.content}`,
+			)
+			.join("\n\n---\n\n");
 
-    const prompt = `Summarize the following discussion thread. Provide:
+		const prompt = `Summarize the following discussion thread. Provide:
 1. A concise summary (2-3 sentences)
 2. Key points discussed (3-5 bullet points)
 3. Overall sentiment score from -1 (very negative) to 1 (very positive)
@@ -188,113 +187,113 @@ Respond in JSON format:
   "sentimentScore": 0.0
 }`;
 
-    const responseText = await callOpenRouter(
-      [
-        {
-          role: "system",
-          content:
-            "You are a helpful assistant that summarizes discussion threads. Provide clear, concise summaries in JSON format.",
-        },
-        { role: "user", content: prompt },
-      ],
-      0.5,
-      500
-    );
+		const responseText = await callOpenRouter(
+			[
+				{
+					role: "system",
+					content:
+						"You are a helpful assistant that summarizes discussion threads. Provide clear, concise summaries in JSON format.",
+				},
+				{ role: "user", content: prompt },
+			],
+			0.5,
+			500,
+		);
 
-    logger.info({
-      msg: "OpenRouter summary response",
-      response: responseText.substring(0, 200),
-    });
+		logger.info({
+			msg: "OpenRouter summary response",
+			response: responseText.substring(0, 200),
+		});
 
-    let jsonText = responseText.trim();
-    if (jsonText.includes("```json")) {
-      jsonText = jsonText.split("```json")[1].split("```")[0].trim();
-    } else if (jsonText.includes("```")) {
-      jsonText = jsonText.split("```")[1].split("```")[0].trim();
-    }
+		let jsonText = responseText.trim();
+		if (jsonText.includes("```json")) {
+			jsonText = jsonText.split("```json")[1].split("```")[0].trim();
+		} else if (jsonText.includes("```")) {
+			jsonText = jsonText.split("```")[1].split("```")[0].trim();
+		}
 
-    const result = JSON.parse(jsonText);
+		const result = JSON.parse(jsonText);
 
-    return {
-      summary: result.summary,
-      keyPoints: result.keyPoints || [],
-      wordCount: result.summary.split(" ").length,
-      sentimentScore: result.sentimentScore,
-    };
-  } catch (error) {
-    logger.error("AI summary error");
-    return mockSummary(posts);
-  }
+		return {
+			summary: result.summary,
+			keyPoints: result.keyPoints || [],
+			wordCount: result.summary.split(" ").length,
+			sentimentScore: result.sentimentScore,
+		};
+	} catch (_error) {
+		logger.error("AI summary error");
+		return mockSummary(posts);
+	}
 };
 
 const mockModeration = (content: string): IModerationResult => {
-  if (!content) {
-    logger.error("Mock moderation received undefined content");
-    return {
-      isSpam: false,
-      isToxic: false,
-      isInappropriate: false,
-      spamScore: 0,
-      toxicityScore: 0,
-      inappropriateScore: 0,
-      recommendation: "approve",
-      reasoning: "Error: Content is undefined",
-    };
-  }
+	if (!content) {
+		logger.error("Mock moderation received undefined content");
+		return {
+			isSpam: false,
+			isToxic: false,
+			isInappropriate: false,
+			spamScore: 0,
+			toxicityScore: 0,
+			inappropriateScore: 0,
+			recommendation: "approve",
+			reasoning: "Error: Content is undefined",
+		};
+	}
 
-  const lowerContent = content.toLowerCase();
+	const lowerContent = content.toLowerCase();
 
-  const spamKeywords = ["buy now", "click here", "limited offer", "free money"];
-  const toxicKeywords = ["hate", "stupid", "idiot", "kill"];
-  const inappropriateKeywords = ["adult", "explicit"];
+	const spamKeywords = ["buy now", "click here", "limited offer", "free money"];
+	const toxicKeywords = ["hate", "stupid", "idiot", "kill"];
+	const inappropriateKeywords = ["adult", "explicit"];
 
-  const spamScore = spamKeywords.some((kw) => lowerContent.includes(kw))
-    ? 0.8
-    : 0.1;
-  const toxicityScore = toxicKeywords.some((kw) => lowerContent.includes(kw))
-    ? 0.8
-    : 0.1;
-  const inappropriateScore = inappropriateKeywords.some((kw) =>
-    lowerContent.includes(kw)
-  )
-    ? 0.8
-    : 0.1;
+	const spamScore = spamKeywords.some((kw) => lowerContent.includes(kw))
+		? 0.8
+		: 0.1;
+	const toxicityScore = toxicKeywords.some((kw) => lowerContent.includes(kw))
+		? 0.8
+		: 0.1;
+	const inappropriateScore = inappropriateKeywords.some((kw) =>
+		lowerContent.includes(kw),
+	)
+		? 0.8
+		: 0.1;
 
-  const maxScore = Math.max(spamScore, toxicityScore, inappropriateScore);
-  const recommendation =
-    maxScore > 0.7 ? "reject" : maxScore > 0.3 ? "review" : "approve";
+	const maxScore = Math.max(spamScore, toxicityScore, inappropriateScore);
+	const recommendation =
+		maxScore > 0.7 ? "reject" : maxScore > 0.3 ? "review" : "approve";
 
-  return {
-    isSpam: spamScore > 0.3,
-    isToxic: toxicityScore > 0.3,
-    isInappropriate: inappropriateScore > 0.3,
-    spamScore,
-    toxicityScore,
-    inappropriateScore,
-    recommendation,
-    reasoning: "Mock moderation based on keyword detection",
-  };
+	return {
+		isSpam: spamScore > 0.3,
+		isToxic: toxicityScore > 0.3,
+		isInappropriate: inappropriateScore > 0.3,
+		spamScore,
+		toxicityScore,
+		inappropriateScore,
+		recommendation,
+		reasoning: "Mock moderation based on keyword detection",
+	};
 };
 
 const mockSummary = (
-  posts: Array<{ content: string; author: string }>
+	posts: Array<{ content: string; author: string }>,
 ): ISummaryResult => {
-  const allContent = posts.map((p) => p.content).join(" ");
-  const wordCount = allContent.split(" ").length;
+	const allContent = posts.map((p) => p.content).join(" ");
+	const wordCount = allContent.split(" ").length;
 
-  return {
-    summary: `This thread contains ${posts.length} posts discussing various topics. Mock summary generated due to missing AI configuration.`,
-    keyPoints: [
-      `Total posts: ${posts.length}`,
-      `Total words: ${wordCount}`,
-      "AI moderation not configured",
-    ],
-    wordCount: 20,
-    sentimentScore: 0,
-  };
+	return {
+		summary: `This thread contains ${posts.length} posts discussing various topics. Mock summary generated due to missing AI configuration.`,
+		keyPoints: [
+			`Total posts: ${posts.length}`,
+			`Total words: ${wordCount}`,
+			"AI moderation not configured",
+		],
+		wordCount: 20,
+		sentimentScore: 0,
+	};
 };
 
 export const AIService = {
-  moderateContent,
-  generateThreadSummary,
+	moderateContent,
+	generateThreadSummary,
 };
